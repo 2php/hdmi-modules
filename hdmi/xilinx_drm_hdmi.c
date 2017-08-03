@@ -341,12 +341,10 @@ static void XHdcp_Authenticate(XV_HdmiTxSs *HdmiTxSsPtr)
 static void TxToggleCallback(void *CallbackRef)
 {
 	struct xilinx_drm_hdmi *xhdmi = (struct xilinx_drm_hdmi *)CallbackRef;
-	XV_HdmiTxSs *HdmiTxSsPtr = &xhdmi->xv_hdmitxss;
-	XVphy *VphyPtr = xhdmi->xvphy;
 	BUG_ON(!xhdmi);
+
+	XV_HdmiTxSs *HdmiTxSsPtr = &xhdmi->xv_hdmitxss;
 	BUG_ON(!HdmiTxSsPtr);
-	BUG_ON(!VphyPtr);
-	BUG_ON(!xhdmi->phy[0]);
 	hdmi_dbg("TxToggleCallback()\n");
 
 	XV_HdmiTxSs_StreamStart(HdmiTxSsPtr);
