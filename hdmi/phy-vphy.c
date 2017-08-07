@@ -588,7 +588,7 @@ static int xvphy_probe(struct platform_device *pdev)
 		hdmi_dbg("DRU reference clock frequency %0d Hz\n\r",
 						XVphy_DruGetRefClkFreqHz(&vphydev->xvphy));
 	}
-	dev_info(&pdev->dev, "xlnx-hdmi-vphy: initialization completed\n");
+	dev_info(&pdev->dev, "hdmi-vphy probe successful\n");
 	/* probe has succeeded for this instance, increment instance index */
 	instance++;
 	return 0;
