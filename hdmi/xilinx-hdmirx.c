@@ -30,6 +30,7 @@
 
 #include <media/v4l2-async.h>
 #include <media/v4l2-ctrls.h>
+#include <media/v4l2-event.h>
 #include <media/v4l2-subdev.h>
 #include <media/v4l2-dv-timings.h>
 
@@ -163,6 +164,37 @@ static inline struct xhdmi_device *to_xhdmi(struct v4l2_subdev *subdev)
 }
 
 /* -----------------------------------------------------------------------------
+ * V4L2 Subdevice Core Operations
+ */
+
+static const struct v4l2_event xhdmi_ev_fmt = {
+	.type = V4L2_EVENT_SOURCE_CHANGE,
+	.u.src_change.changes = V4L2_EVENT_SRC_CH_RESOLUTION,
+};
+
+static int xhdmi_subscribe_event(struct v4l2_subdev *sd, struct v4l2_fh *fh, struct v4l2_event_subscription *sub)
+{
+	switch (sub->type) {
+		case V4L2_EVENT_SOURCE_CHANGE:
+		{
+			int rc;
+			rc = v4l2_src_change_event_subdev_subscribe(sd, fh, sub);
+			printk(KERN_INFO "xhdmi_subscribe_event(V4L2_EVENT_SOURCE_CHANGE) = %d\n", rc);
+			return rc;
+		}
+#if 0
+		case V4L2_EVENT_CTRL:
+			return v4l2_ctrl_subdev_subscribe_event(sd, fh, sub);
+#endif
+		default:
+		{
+			printk(KERN_INFO "xhdmi_subscribe_event() default: -EINVAL\n");
+			return -EINVAL;
+		}
+	}
+}
+
+ /* -----------------------------------------------------------------------------
  * V4L2 Subdevice Video Operations
  */
 
@@ -390,6 +422,8 @@ static const struct v4l2_ctrl_ops xhdmi_ctrl_ops = {
 };
 
 static struct v4l2_subdev_core_ops xhdmi_core_ops = {
+	.subscribe_event = xhdmi_subscribe_event,
+	.unsubscribe_event = v4l2_event_subdev_unsubscribe,
 };
 
 static struct v4l2_subdev_video_ops xhdmi_video_ops = {
@@ -833,6 +867,9 @@ static void RxStreamUpCallback(void *CallbackRef)
 	(void)Stream->VmId;
 
 	xhdmi->hdmi_stream_is_up = 1;
+	/* notify source format change event */
+	v4l2_subdev_notify_event(&xhdmi->subdev, &xhdmi_ev_fmt);
+
 #ifdef DEBUG	
 	v4l2_print_dv_timings("xilinx-hdmi-rx", "", & xhdmi->detected_timings, 1);
 #endif	
@@ -1471,7 +1508,6 @@ static int xhdmi_probe(struct platform_device *pdev)
 	}
 
 	HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
-	platform_set_drvdata(pdev, xhdmi);
 	hdmi_mutex_lock(&xhdmi->xhdmi_mutex);
 
 	ret = devm_request_threaded_irq(&pdev->dev, xhdmi->irq, hdmirx_irq_handler, hdmirx_irq_thread,
@@ -1638,6 +1674,7 @@ static int xhdmi_probe(struct platform_device *pdev)
 	XV_HdmiRxSs_HdcpSetInfoDetail(HdmiRxSsPtr, TRUE);
 	XV_HdmiRxSs_LogDisplay(HdmiRxSsPtr);
 #endif
+	platform_set_drvdata(pdev, xhdmi);
 	
 	/* Initialize V4L2 subdevice */
 	subdev = &xhdmi->subdev;
@@ -1646,7 +1683,7 @@ static int xhdmi_probe(struct platform_device *pdev)
 	subdev->internal_ops = &xhdmi_internal_ops;
 	strlcpy(subdev->name, dev_name(&pdev->dev), sizeof(subdev->name));
 	v4l2_set_subdevdata(subdev, xhdmi);
-	subdev->flags |= V4L2_SUBDEV_FL_HAS_DEVNODE /* | V4L2_SUBDEV_FL_HAS_EVENTS*/;
+	subdev->flags |= V4L2_SUBDEV_FL_HAS_DEVNODE | V4L2_SUBDEV_FL_HAS_EVENTS;
 
 	/* Initialize V4L2 media entity */
 	xhdmi->pad.flags = MEDIA_PAD_FL_SOURCE;
@@ -1685,6 +1722,8 @@ static int xhdmi_probe(struct platform_device *pdev)
 		goto error;
 	}
 
+	hdmi_mutex_unlock(&xhdmi->xhdmi_mutex);
+
 	/* enable interrupts */
 	spin_lock_irqsave(&xhdmi->irq_lock, flags);
 	XV_HdmiRxSs_IntrEnable(HdmiRxSsPtr);
@@ -1697,8 +1736,6 @@ static int xhdmi_probe(struct platform_device *pdev)
 	}
 	/* probe has succeeded for this instance, increment instance index */
 	instance++;
-
-	hdmi_mutex_unlock(&xhdmi->xhdmi_mutex);
 
 	/* return success */
 	return 0;
