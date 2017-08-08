@@ -1,11 +1,5 @@
 SRC := $(shell pwd)
 
-ifeq ($(O),)
-	include $(KERNEL_SRC)/.config
-else
-	include $(O)/.config
-endif
-
 obj-m	+= clk/
 obj-m	+= hdmi/
 obj-m	+= misc/
