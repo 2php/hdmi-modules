@@ -153,6 +153,7 @@ struct xilinx_drm_hdmi {
 	XVphy *xvphy;
 };
 
+
 static inline struct xilinx_drm_hdmi *to_hdmi(struct drm_encoder *encoder)
 {
 	return to_encoder_slave(encoder)->slave_priv;
@@ -670,6 +671,23 @@ static int xilinx_drm_hdmi_mode_valid(struct drm_encoder *encoder,
 	return status;
 }
 
+static u32 hdmitx_find_media_bus(u32 drm_fourcc)
+{
+	switch(drm_fourcc) {
+
+	case DRM_FORMAT_YUYV:
+	case DRM_FORMAT_NV16:
+		return XVIDC_CSF_YCRCB_422;
+
+	case DRM_FORMAT_NV12:
+		return XVIDC_CSF_YCRCB_420;
+
+	default:
+		return XVIDC_CSF_RGB;
+	}
+}
+
+
 #ifdef CHANGE_CLOCKRATE_LAST
 static void xilinx_drm_hdmi_mode_set_nop(struct drm_encoder *encoder,
 				   struct drm_display_mode *mode,
@@ -690,6 +708,7 @@ static void xilinx_drm_hdmi_mode_set(struct drm_encoder *encoder,
 	u32 TmdsClock = 0;
 	u32 PrevPhyTxRefClock = 0;
 	u32 Result;
+	u32 drm_fourcc;
 	bool is_gpio_active_low;
 	XVidC_VideoMode VmId;
 
@@ -708,6 +727,9 @@ static void xilinx_drm_hdmi_mode_set(struct drm_encoder *encoder,
 	xvphy_mutex_lock(xhdmi->phy[0]);
 
 	drm_mode_debug_printmodeline(mode);
+
+	drm_fourcc = encoder->crtc->primary->fb->pixel_format;
+	xhdmi->xvidc_colorfmt = hdmitx_find_media_bus(drm_fourcc);
 
 #ifdef DEBUG
 	hdmi_dbg("mode->clock = %d\n", mode->clock * 1000);
@@ -777,7 +799,8 @@ static void xilinx_drm_hdmi_mode_set(struct drm_encoder *encoder,
 		HdmiTxSsVidStreamPtr->Timing = vt; //overwrite with drm detected timing
 		XVidC_ReportTiming(&HdmiTxSsVidStreamPtr->Timing, FALSE);
 	}
-	TmdsClock = XV_HdmiTxSs_SetStream(HdmiTxSsPtr, VmId, xhdmi->xvidc_colorfmt, XVIDC_BPC_8, NULL);
+	TmdsClock = XV_HdmiTxSs_SetStream(HdmiTxSsPtr, VmId, xhdmi->xvidc_colorfmt,
+			HdmiTxSsPtr->Config.MaxBitsPerPixel, NULL);
 
 	VphyPtr->HdmiTxRefClkHz = TmdsClock;
 	hdmi_dbg("(TmdsClock = %u, from XV_HdmiTxSs_SetStream())\n", TmdsClock);
@@ -1468,24 +1491,8 @@ static int xilinx_drm_hdmi_parse_of(struct xilinx_drm_hdmi *xhdmi, XV_HdmiTxSs_C
 		xhdmi->hdcp_encrypt = val;
 	}	
 
-	rc = of_property_read_string(node, "xlnx,output-fmt", &format);
-	if (rc < 0) {
-		dev_err(xhdmi->dev, "xlnx,output-fmt must be specified\n");
-		goto error_dt;
-	} else
-	if (strcmp(format, "rgb") == 0) {
-		xhdmi->xvidc_colorfmt = XVIDC_CSF_RGB;
-	} else if (strcmp(format, "yuv444") == 0) {
-		xhdmi->xvidc_colorfmt = XVIDC_CSF_YCRCB_444;
-	} else if (strcmp(format, "yuv422") == 0) {
-		xhdmi->xvidc_colorfmt = XVIDC_CSF_YCRCB_422;
-	} else if (strcmp(format, "yuv420") == 0) {
-		xhdmi->xvidc_colorfmt = XVIDC_CSF_YCRCB_420;
-	} else {
-		dev_err(xhdmi->dev, "Unsupported xlnx,pixel-format\n");
-		goto error_dt;
-	}
-
+	// set default color format to RGB
+	xhdmi->xvidc_colorfmt = XVIDC_CSF_RGB;
 	return 0;
 
 error_dt:

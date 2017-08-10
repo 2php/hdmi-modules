@@ -60,8 +60,6 @@ Required properties:
          Note: Only 2 is supported at this time
  - xlnx,max-bits-per-component: The data width per video component (8,10,12,16)
          Note: Only 8 is supported at this time
- - xlnx,output-fmt: Output Streaming format. Valid strings are "rgb", 
-         "yuv444", "yuv422" and "yuv420"
  - xlnx,hdmi-tx-offset: Relative offset of tx core within the subsystem
  - xlnx,vtc-offset: Relative offset of vtc core within the subsystem
  - xlnx,hdmi-tx-offset: Relative offset of tx core within the subsystem
