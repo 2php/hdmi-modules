@@ -1,14 +1,15 @@
 Xilinx HDMI RX Subsystem
 
 The Xilinx HDMI RX Subsystem contains several subcores to implement
-a HDMI receiver. media/platform/xilinx/xilinx-hdmi-rx.c implements a
+a HDMI receiver. /hdmi/xilinx-hdmi-rx.c implements a
 V4L2 video-capture sub-device for the Xilinx Video IP Pipeline device
 (xilinx-vipp).
 
 There are 2 optional HDCP cores that can be included in the IP configuration.
 Below provided sample device tree depicts the configuration when both cores are 
 included. If an optional core is included then corresponding entries for the 
-core parameters must be included in the device tree
+core parameters (interrupts, key-management block address) must be included in
+the device tree
 
 Note: If HDCP cores are included in the design, the user must provide valid
 	  HDCP keys for the encryption to work. 
@@ -48,22 +49,10 @@ Required Properties:
  - xlnx,max-bits-per-component: The data width per video component (8,10,12,16)
          Note: Only 8 is supported at this time
  - xlnx,edid-ram-size: Denotes amount of BRAM allocated for EDID in IP 
- - xlnx,hdmi-rx-offset: Relative offset of rx core within the subsystem
- - xlnx,hdcp22-rx-offset: Relative offset of optional hdcp22 core within the
-		subsystem. If present indicates inclusion of the optional core
- - xlnx,hdcp22-cipher-offset: Relative offset of hdcp22 cipher within the 
-		subsystem. Must be present if hdcp22 is included
- - xlnx,hdcp22-mmult-offset: Relative offset of hdcp22 multiplier within the
-		subsystem. Must be present if hdcp22 is included
- - xlnx,hdcp22-timer-offset: Relative offset of hdcp22 timer within the
-		subsystem. Must be present if hdcp22 is included
- - xlnx,hdcp22-rng-offset: Relative offset of rng core within the
-		subsystem. Must be present if hdcp22 is included	
- - xlnx,hdcp1x-offset: Relative offset of optional hdcp1x core within the
-		subsystem. If present indicates inclusion of the optional core 
- - xlnx,hdcp1x-timer-offset: Relative offset of hdcp1x timer within the
-		subsystem. Must be present if hdcp1x is included
-
+ - xlnx,include-hdcp-1-4: Boolean parameter that denotes if hdcp14 is included.
+		If present indicates inclusion of the optional core
+ - xlnx,include-hdcp-2-2: Boolean parameter that denotes if hdcp22 is included.
+		If present indicates inclusion of the optional core
  - ports: Video ports, using the DT bindings defined in ../video-interfaces.txt.
           The Rx only has an output port (0).
  
@@ -84,21 +73,8 @@ Required Properties:
 		xlnx,input-pixels-per-clock = <0x2>;
 		xlnx,max-bits-per-component = <0x8>;
 		xlnx,edid-ram-size = <0x100>;
-		
-		/* offset of HDMI RX within the HDMI RXSS */
-		xlnx,hdmi-rx-offset = <0x90000>;
-	
-		/* HDCP22 is a subsystem within the HDMI RXSS at this offset */
-		xlnx,hdcp22-rx-offset = <0x40000>;
-		/* and so the HDCP22 subcomponent offsets are relative to xlnx,hdcp22-rx-offset */
-		xlnx,hdcp22-cipher-offset = <0x00000>;
-		xlnx,hdcp22-mmult-offset = <0x10000>;
-		xlnx,hdcp22-timer-offset = <0x20000>;
-		xlnx,hdcp22-rng-offset = <0x30000>;
-	
-		/* HDCP14 is NOT a subsystem (currently), so these are relative to RXSS reg base */
-		xlnx,hdcp1x-timer-offset = <0x00000>;
-		xlnx,hdcp1x-offset = <0x80000>;
+		xlnx,include-hdcp-1-4;
+		xlnx,include-hdcp-2-2;
 
 		ports {
 			#address-cells = <1>;

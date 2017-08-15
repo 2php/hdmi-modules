@@ -78,6 +78,17 @@
 #define hdmi_mutex_lock(x) mutex_lock(x)
 #define hdmi_mutex_unlock(x) mutex_unlock(x)
 
+/* TX Subsystem Sub-core offsets */
+#define TXSS_TX_OFFSET				0x90000u
+#define TXSS_VTC_OFFSET				0xA0000u
+#define TXSS_HDCP14_OFFSET			0x80000u
+#define TXSS_HDCP14_TIMER_OFFSET	0x00000u
+#define TXSS_HDCP22_OFFSET			0x40000u
+/* HDCP22 sub-core offsets */
+#define TX_HDCP22_CIPHER_OFFSET		0x00000u
+#define TX_HDCP22_TIMER_OFFSET		0x10000u
+#define TX_HDCP22_RNG_OFFSET		0x20000u
+
 /**
  * struct xilinx_drm_hdmi - Xilinx HDMI core
  * @encoder: pointer to the drm encoder structure
@@ -1332,7 +1343,7 @@ static int xhdmi_drm_compute_subcore_AbsAddr(XV_HdmiTxSs_Config *config)
 	   return -EFAULT;
 	}
 	XV_HdmiTx_ConfigTable[instance].BaseAddress = config->HdmiTx.AbsAddr;
-	
+
 	/* Subcore: Vtc */
 	ret = xhdmi_drm_subcore_AbsAddr(config->BaseAddress,
 									config->HighAddress,
@@ -1393,6 +1404,7 @@ static int xilinx_drm_hdmi_parse_of(struct xilinx_drm_hdmi *xhdmi, XV_HdmiTxSs_C
 	struct device_node *node = dev->of_node;
 	int rc;
 	u32 val;
+	bool isHdcp14_en, isHdcp22_en;
 	const char *format;
 
 	rc = of_property_read_u32(node, "xlnx,input-pixels-per-clock", &val);
@@ -1405,92 +1417,83 @@ static int xilinx_drm_hdmi_parse_of(struct xilinx_drm_hdmi *xhdmi, XV_HdmiTxSs_C
 		goto error_dt;
 	config->MaxBitsPerPixel = val;
 
-	rc = of_property_read_u32(node, "xlnx,hdmi-tx-offset", &val);
-	if (rc < 0) {
-		goto error_dt;
-	} else if (rc == 0) {
-		config->HdmiTx.DeviceId = TX_DEVICE_ID_BASE + instance;
-		config->HdmiTx.IsPresent = 1; 
- 		config->HdmiTx.AbsAddr = val; 
-		XV_HdmiTx_ConfigTable[instance].DeviceId = TX_DEVICE_ID_BASE + instance;
-		XV_HdmiTx_ConfigTable[instance].BaseAddress = val;
-	}
-	
-	rc = of_property_read_u32(node, "xlnx,vtc-offset", &val);
-	if (rc < 0) {
-		goto error_dt;
-	} else if (rc == 0) {
-		config->Vtc.IsPresent = 1;
-		config->Vtc.DeviceId = TX_DEVICE_ID_BASE + instance;
-		config->Vtc.AbsAddr = val;
-		XVtc_ConfigTable[instance].DeviceId = config->Vtc.DeviceId;
-		XVtc_ConfigTable[instance].BaseAddress = val;
-	}
 
-	rc = of_property_read_u32(node, "xlnx,hdcp1x-offset", &val);
-	if (rc == 0) {
+	/* Tx Core */
+	config->HdmiTx.DeviceId = TX_DEVICE_ID_BASE + instance;
+	config->HdmiTx.IsPresent = 1;
+	config->HdmiTx.AbsAddr = TXSS_TX_OFFSET;
+	XV_HdmiTx_ConfigTable[instance].DeviceId = TX_DEVICE_ID_BASE + instance;
+	XV_HdmiTx_ConfigTable[instance].BaseAddress = TXSS_TX_OFFSET;
+	/*VTC Core */
+	config->Vtc.IsPresent = 1;
+	config->Vtc.DeviceId = TX_DEVICE_ID_BASE + instance;
+	config->Vtc.AbsAddr = TXSS_VTC_OFFSET;
+	XVtc_ConfigTable[instance].DeviceId = config->Vtc.DeviceId;
+	XVtc_ConfigTable[instance].BaseAddress = TXSS_VTC_OFFSET;
+
+	isHdcp14_en = of_property_read_bool(node, "xlnx,include-hdcp-1-4");
+	isHdcp22_en = of_property_read_bool(node, "xlnx,include-hdcp-2-2");
+
+	if (isHdcp14_en) {
+		/* HDCP14 Core */
 		/* make subcomponent of TXSS present */
 		config->Hdcp14.IsPresent = 1;
 		config->Hdcp14.DeviceId = TX_DEVICE_ID_BASE + instance;
-		config->Hdcp14.AbsAddr = val;
+		config->Hdcp14.AbsAddr = TXSS_HDCP14_OFFSET;
 		XHdcp1x_ConfigTable[instance].DeviceId = config->Hdcp14.DeviceId;
-		XHdcp1x_ConfigTable[instance].BaseAddress = val;
+		XHdcp1x_ConfigTable[instance].BaseAddress = TXSS_HDCP14_OFFSET;
 		XHdcp1x_ConfigTable[instance].IsRx = 0;
 		XHdcp1x_ConfigTable[instance].IsHDMI = 1;
-	}
 
-	rc = of_property_read_u32(node, "xlnx,hdcp1x-timer-offset", &val);
-	if (rc == 0) {
+		/* HDCP14 Timer Core */
 		/* make subcomponent of TXSS present */
 		config->HdcpTimer.DeviceId = TX_DEVICE_ID_BASE + instance;
 		config->HdcpTimer.IsPresent = 1;
-		config->HdcpTimer.AbsAddr = val;
+		config->HdcpTimer.AbsAddr = TXSS_HDCP14_TIMER_OFFSET;
 
 		/* and configure it */
 		XTmrCtr_ConfigTable[instance * 2 + 0].DeviceId = config->HdcpTimer.DeviceId;
-		XTmrCtr_ConfigTable[instance * 2 + 0].BaseAddress = val;
+		XTmrCtr_ConfigTable[instance * 2 + 0].BaseAddress = TXSS_HDCP14_TIMER_OFFSET;
 		/* @TODO increment timer index */
 	}
 
-	rc = of_property_read_u32(node, "xlnx,hdcp22-tx-offset", &val);
-	if (rc == 0) {
+	if (isHdcp22_en) {
+		/* HDCP22 SS */
 		config->Hdcp22.DeviceId = TX_DEVICE_ID_BASE + instance;
 		config->Hdcp22.IsPresent = 1;
-		config->Hdcp22.AbsAddr = val;
+		config->Hdcp22.AbsAddr = TXSS_HDCP22_OFFSET;
 		XHdcp22_Tx_ConfigTable[instance].DeviceId = config->Hdcp22.DeviceId;
-		XHdcp22_Tx_ConfigTable[instance].BaseAddress = val;
+		XHdcp22_Tx_ConfigTable[instance].BaseAddress = TXSS_HDCP22_OFFSET;
 		XHdcp22_Tx_ConfigTable[instance].Protocol = 0; //HDCP22_TX_HDMI
 		XHdcp22_Tx_ConfigTable[instance].Mode = 0; //XHDCP22_TX_TRANSMITTER
 		XHdcp22_Tx_ConfigTable[instance].TimerDeviceId = TX_DEVICE_ID_BASE + 64 + instance;
 		XHdcp22_Tx_ConfigTable[instance].CipherId = TX_DEVICE_ID_BASE + instance;
-		XHdcp22_Tx_ConfigTable[instance].RngId = TX_DEVICE_ID_BASE + instance;;
-	}
+		XHdcp22_Tx_ConfigTable[instance].RngId = TX_DEVICE_ID_BASE + instance;
 
-	rc = of_property_read_u32(node, "xlnx,hdcp22-timer-offset", &val);
-	if (rc == 0) {
-		XTmrCtr_ConfigTable[instance * 2 + 1].DeviceId = TX_DEVICE_ID_BASE + 64 + instance;
-		XTmrCtr_ConfigTable[instance * 2 + 1].BaseAddress = val;
-	}
-	rc = of_property_read_u32(node, "xlnx,hdcp22-cipher-offset", &val);
-	if (rc == 0) {
+		/* HDCP22 Cipher Core */
 		XHdcp22_Cipher_ConfigTable[instance].DeviceId = TX_DEVICE_ID_BASE + instance;
-		XHdcp22_Cipher_ConfigTable[instance].BaseAddress = val;
-	}
-	rc = of_property_read_u32(node, "xlnx,hdcp22-rng-offset", &val);
-	if (rc == 0) {
+		XHdcp22_Cipher_ConfigTable[instance].BaseAddress = TX_HDCP22_CIPHER_OFFSET;
+		/* HDCP22-Timer Core */
+		XTmrCtr_ConfigTable[instance * 2 + 1].DeviceId = TX_DEVICE_ID_BASE + 64 + instance;
+		XTmrCtr_ConfigTable[instance * 2 + 1].BaseAddress = TX_HDCP22_TIMER_OFFSET;
+		/* HDCP22 RNG Core */
 		XHdcp22_Rng_ConfigTable[instance].DeviceId = TX_DEVICE_ID_BASE + instance;
-		XHdcp22_Rng_ConfigTable[instance].BaseAddress = val;
+		XHdcp22_Rng_ConfigTable[instance].BaseAddress = TX_HDCP22_RNG_OFFSET;
 	}
 
-	rc = of_property_read_u32(node, "xlnx,hdcp-authenticate", &val);
-	if (rc == 0) {
-		xhdmi->hdcp_authenticate = val;
+	if (isHdcp14_en || isHdcp22_en) {
+		rc = of_property_read_u32(node, "xlnx,hdcp-authenticate", &val);
+		if (rc == 0) {
+			xhdmi->hdcp_authenticate = val;
+		}
+		rc = of_property_read_u32(node, "xlnx,hdcp-encrypt", &val);
+		if (rc == 0) {
+			xhdmi->hdcp_encrypt = val;
+		}
+	} else {
+		xhdmi->hdcp_authenticate = 0;
+		xhdmi->hdcp_encrypt = 0;
 	}
-	rc = of_property_read_u32(node, "xlnx,hdcp-encrypt", &val);
-	if (rc == 0) {
-		xhdmi->hdcp_encrypt = val;
-	}	
-
 	// set default color format to RGB
 	xhdmi->xvidc_colorfmt = XVIDC_CSF_RGB;
 	return 0;

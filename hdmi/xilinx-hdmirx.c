@@ -72,6 +72,17 @@
 #define EDID_BLOCKS_MAX 10
 #define EDID_BLOCK_SIZE 128
 
+/* RX Subsystem Sub-core offsets */
+#define RXSS_RX_OFFSET				0x90000u
+#define RXSS_HDCP14_OFFSET			0x80000u
+#define RXSS_HDCP14_TIMER_OFFSET	0x00000u
+#define RXSS_HDCP22_OFFSET			0x40000u
+/* HDCP22 sub-core offsets */
+#define RX_HDCP22_CIPHER_OFFSET		0x00000u
+#define RX_HDCP2_MMULT_OFFSET		0x10000u
+#define RX_HDCP22_TIMER_OFFSET		0x20000u
+#define RX_HDCP22_RNG_OFFSET		0x30000u
+
 struct xhdmi_device {
 	struct device xvip;
 	struct device *dev;
@@ -1243,6 +1254,7 @@ static int xhdmi_parse_of(struct xhdmi_device *xhdmi, XV_HdmiRxSs_Config *config
 	struct device *dev = xhdmi->dev;
 	struct device_node *node = dev->of_node;
 	int rc;
+	bool isHdcp14_en, isHdcp22_en;
 	u32 val;
 
 	rc = of_property_read_u32(node, "xlnx,input-pixels-per-clock", &val);
@@ -1255,17 +1267,6 @@ static int xhdmi_parse_of(struct xhdmi_device *xhdmi, XV_HdmiRxSs_Config *config
 		goto error_dt;
 	config->MaxBitsPerPixel = val;
 	
-	rc = of_property_read_u32(node, "xlnx,hdmi-rx-offset", &val);
-	if (rc < 0) {
-		goto error_dt;
- 	} else if (rc == 0) { 
-		config->HdmiRx.DeviceId = RX_DEVICE_ID_BASE + instance;
- 		config->HdmiRx.IsPresent = 1; 
-		config->HdmiRx.AbsAddr = val;
-		XV_HdmiRx_ConfigTable[instance].DeviceId = RX_DEVICE_ID_BASE + instance;
-		XV_HdmiRx_ConfigTable[instance].BaseAddress = val;
- 	}
-
 	rc = of_property_read_u32(node, "xlnx,edid-ram-size", &val);
 	if (rc == 0) {
 		if (val % 128)
@@ -1273,65 +1274,65 @@ static int xhdmi_parse_of(struct xhdmi_device *xhdmi, XV_HdmiRxSs_Config *config
 		xhdmi->edid_blocks_max = val / EDID_BLOCK_SIZE;
 	}
 
-	rc = of_property_read_u32(node, "xlnx,hdcp1x-offset", &val);
-	if (rc == 0) {
+	/* RX Core */
+	config->HdmiRx.DeviceId = RX_DEVICE_ID_BASE + instance;
+	config->HdmiRx.IsPresent = 1;
+	config->HdmiRx.AbsAddr = RXSS_RX_OFFSET;
+	XV_HdmiRx_ConfigTable[instance].DeviceId = RX_DEVICE_ID_BASE + instance;
+	XV_HdmiRx_ConfigTable[instance].BaseAddress = RXSS_RX_OFFSET;
+
+	isHdcp14_en = of_property_read_bool(node, "xlnx,include-hdcp-1-4");
+	isHdcp22_en = of_property_read_bool(node, "xlnx,include-hdcp-2-2");
+
+	if (isHdcp14_en) {
+		/* HDCP14 Core */
 		/* make subcomponent of RXSS present */
 		config->Hdcp14.DeviceId = RX_DEVICE_ID_BASE + instance;
 		config->Hdcp14.IsPresent = 1;
-		config->Hdcp14.AbsAddr = val;
+		config->Hdcp14.AbsAddr = RXSS_HDCP14_OFFSET;
 		/* and configure it */
 		XHdcp1x_ConfigTable[XPAR_XHDCP_NUM_INSTANCES/2 + instance].DeviceId = config->Hdcp14.DeviceId;
-		XHdcp1x_ConfigTable[XPAR_XHDCP_NUM_INSTANCES/2 + instance].BaseAddress = val;
+		XHdcp1x_ConfigTable[XPAR_XHDCP_NUM_INSTANCES/2 + instance].BaseAddress = RXSS_HDCP14_OFFSET;
 		XHdcp1x_ConfigTable[XPAR_XHDCP_NUM_INSTANCES/2 + instance].IsRx = 1;
 		XHdcp1x_ConfigTable[XPAR_XHDCP_NUM_INSTANCES/2 + instance].IsHDMI = 1;
-	}
 
-	rc = of_property_read_u32(node, "xlnx,hdcp1x-timer-offset", &val);
-	if (rc == 0) {
+		/* HDCP14 Timer Core */
 		/* make subcomponent of RXSS present */
 		config->HdcpTimer.DeviceId = RX_DEVICE_ID_BASE + instance;
 		config->HdcpTimer.IsPresent = 1;
-		config->HdcpTimer.AbsAddr = val;
+		config->HdcpTimer.AbsAddr = RXSS_HDCP14_TIMER_OFFSET;
 		/* and configure it */
 		XTmrCtr_ConfigTable[XPAR_XTMRCTR_NUM_INSTANCES/2 + instance * 2 + 0].DeviceId = config->HdcpTimer.DeviceId;
-		XTmrCtr_ConfigTable[XPAR_XTMRCTR_NUM_INSTANCES/2 + instance * 2 + 0].BaseAddress = val;
+		XTmrCtr_ConfigTable[XPAR_XTMRCTR_NUM_INSTANCES/2 + instance * 2 + 0].BaseAddress = RXSS_HDCP14_TIMER_OFFSET;
 		/* @TODO increment timer index */
 	}
 
-	rc = of_property_read_u32(node, "xlnx,hdcp22-rx-offset", &val);
-	if (rc == 0) {
+	if (isHdcp22_en) {
+		/* HDCP22 SS */
 		config->Hdcp22.DeviceId = RX_DEVICE_ID_BASE + instance;
 		config->Hdcp22.IsPresent = 1;
-		config->Hdcp22.AbsAddr = val;
+		config->Hdcp22.AbsAddr = RXSS_HDCP22_OFFSET;
 		XHdcp22_Rx_ConfigTable[instance].DeviceId = config->Hdcp22.DeviceId;
-		XHdcp22_Rx_ConfigTable[instance].BaseAddress = val;
+		XHdcp22_Rx_ConfigTable[instance].BaseAddress = RXSS_HDCP22_OFFSET;
 		XHdcp22_Rx_ConfigTable[instance].Protocol = 0; /*HDCP22_RX_HDMI*/
 		XHdcp22_Rx_ConfigTable[instance].Mode = 0; /*XHDCP22_RX_RECEIVER*/
 		XHdcp22_Rx_ConfigTable[instance].TimerDeviceId = RX_DEVICE_ID_BASE + instance;
 		XHdcp22_Rx_ConfigTable[instance].CipherDeviceId = RX_DEVICE_ID_BASE + instance;
 		XHdcp22_Rx_ConfigTable[instance].MontMultDeviceId = RX_DEVICE_ID_BASE + instance;
 		XHdcp22_Rx_ConfigTable[instance].RngDeviceId = RX_DEVICE_ID_BASE + instance;
-	}
 
-	rc = of_property_read_u32(node, "xlnx,hdcp22-timer-offset", &val);
-	if (rc == 0) {
-		XTmrCtr_ConfigTable[XPAR_XTMRCTR_NUM_INSTANCES/2 + instance * 2 + 1].DeviceId = RX_DEVICE_ID_BASE + 64 + instance;
-		XTmrCtr_ConfigTable[XPAR_XTMRCTR_NUM_INSTANCES/2 + instance * 2 + 1].BaseAddress = val;
-	}
-	rc = of_property_read_u32(node, "xlnx,hdcp22-cipher-offset", &val);
-	if (rc == 0) {
+		/* HDCP22 Cipher Core */
 		XHdcp22_Cipher_ConfigTable[XPAR_XHDCP22_CIPHER_NUM_INSTANCES/2 + instance].DeviceId = RX_DEVICE_ID_BASE + instance;
-		XHdcp22_Cipher_ConfigTable[XPAR_XHDCP22_CIPHER_NUM_INSTANCES/2 + instance].BaseAddress = val;
-	}
-	rc = of_property_read_u32(node, "xlnx,hdcp22-rng-offset", &val);
-	if (rc == 0) {
-		XHdcp22_Rng_ConfigTable[XPAR_XHDCP22_RNG_NUM_INSTANCES/2 + instance].DeviceId = RX_DEVICE_ID_BASE + instance;
-		XHdcp22_Rng_ConfigTable[XPAR_XHDCP22_RNG_NUM_INSTANCES/2 + instance].BaseAddress = val;
-	}
-	rc = of_property_read_u32(node, "xlnx,hdcp22-mmult-offset", &val);
-	if (rc == 0) {
+		XHdcp22_Cipher_ConfigTable[XPAR_XHDCP22_CIPHER_NUM_INSTANCES/2 + instance].BaseAddress = RX_HDCP22_CIPHER_OFFSET;
+		/* HDCP22 MMULT Core */
 		XHdcp22_mmult_ConfigTable[XPAR_XHDCP22_MMULT_NUM_INSTANCES/2 + instance].DeviceId = RX_DEVICE_ID_BASE + instance;
-		XHdcp22_mmult_ConfigTable[XPAR_XHDCP22_MMULT_NUM_INSTANCES/2 + instance].BaseAddress = val;
+		XHdcp22_mmult_ConfigTable[XPAR_XHDCP22_MMULT_NUM_INSTANCES/2 + instance].BaseAddress = RX_HDCP2_MMULT_OFFSET;
+		/* HDCP22-Timer Core */
+		XTmrCtr_ConfigTable[XPAR_XTMRCTR_NUM_INSTANCES/2 + instance * 2 + 1].DeviceId = RX_DEVICE_ID_BASE + 64 + instance;
+		XTmrCtr_ConfigTable[XPAR_XTMRCTR_NUM_INSTANCES/2 + instance * 2 + 1].BaseAddress = RX_HDCP22_TIMER_OFFSET;
+		/* HDCP22 RNG Core */
+		XHdcp22_Rng_ConfigTable[XPAR_XHDCP22_RNG_NUM_INSTANCES/2 + instance].DeviceId = RX_DEVICE_ID_BASE + instance;
+		XHdcp22_Rng_ConfigTable[XPAR_XHDCP22_RNG_NUM_INSTANCES/2 + instance].BaseAddress = RX_HDCP22_RNG_OFFSET;
 	}
 
 	return 0;

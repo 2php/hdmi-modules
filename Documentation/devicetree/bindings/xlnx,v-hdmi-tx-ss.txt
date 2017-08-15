@@ -1,13 +1,8 @@
 Xilinx HDMI TX Subsystem
 
 The Xilinx HDMI TX Subsystem contains several subcores to implement
-a HDMI receiver. staging/xilinx/hdmi/xilinx_drm_hdmi.c implements a
+a HDMI receiver. /hdmi/xilinx_drm_hdmi.c implements a
 DRM/KMS driver that slaves to xilinx_drm_drv.c in the output pipeline.
-
-If xlnx,vtc-offset is given it specifies the offset of the built-in
-VTC IP block. This is required.
-
-Refer to xlnx,vphy.txt for the phy specifics.
 
 retimer-clk is optional. If specified, the corresponding driver
 should offer a CCF clock that supports .set_rate(). Through this,
@@ -17,10 +12,13 @@ depending on the TX clock line rate.
 There are 2 optional HDCP cores that can be included in the IP configuration.
 Below provided sample device tree depicts the configuration when both cores are 
 included. If an optional core is included then corresponding entries for the 
-core parameters must be included in the device tree
+core parameters (interrupts, key-management block address) must be included in
+the device tree
 
 Note: If HDCP cores are included in the design, the user must provide valid
 	  HDCP keys for the encryption to work. 
+
+Refer to xlnx,vphy.txt for the phy specifics.
 	  
 Required properties:
  - compatible: Should be "xlnx,v-hdmi-tx-ss-2.0".
@@ -60,24 +58,15 @@ Required properties:
          Note: Only 2 is supported at this time
  - xlnx,max-bits-per-component: The data width per video component (8,10,12,16)
          Note: Only 8 is supported at this time
- - xlnx,hdmi-tx-offset: Relative offset of tx core within the subsystem
- - xlnx,vtc-offset: Relative offset of vtc core within the subsystem
- - xlnx,hdmi-tx-offset: Relative offset of tx core within the subsystem
- - xlnx,hdcp22-tx-offset: Relative offset of optional hdcp22 core within the
-		subsystem. If present indicates inclusion of the optional core
- - xlnx,hdcp22-cipher-offset: Relative offset of hdcp22 cipher within the 
-		subsystem. Must be present if hdcp22 is included
- - xlnx,hdcp22-timer-offset: Relative offset of hdcp22 timer within the
-		subsystem. Must be present if hdcp22 is included
- - xlnx,hdcp22-rng-offset: Relative offset of rng core within the
-		subsystem. Must be present if hdcp22 is included	
- - xlnx,hdcp1x-offset: Relative offset of optional hdcp1x core within the
-		subsystem. If present indicates inclusion of the optional core 
- - xlnx,hdcp1x-timer-offset: Relative offset of hdcp1x timer within the
-		subsystem. Must be present if hdcp1x is included
- - xlnx,hdcp-authenticate: Flag to enable/disable hdcp authentication
+ - xlnx,include-hdcp-1-4: Boolean parameter that denotes if hdcp14 is included.
+		If present indicates inclusion of the optional core
+ - xlnx,include-hdcp-2-2: Boolean parameter that denotes if hdcp22 is included.
+		If present indicates inclusion of the optional core
+ - xlnx,hdcp-authenticate: Flag to enable/disable hdcp authentication. 
+		Applicable when either hdcp14 or hdcp22 is included in the design
  - xlnx,hdcp-encrypt: Flag to enable/disable stream encryption
- 
+ 		Applicable when either hdcp14 or hdcp22 is included in the design
+		
 The "retimer-clk" is optional. If present, it is notified of TX link
 clock changes through set_rate(). Tested with dp159.c driver.
 
@@ -99,18 +88,9 @@ clock changes through set_rate(). Tested with dp159.c driver.
 	
 		xlnx,input-pixels-per-clock = <0x2>;
 		xlnx,max-bits-per-component = <0x8>;
-		xlnx,output-fmt = "yuv422";
-		xlnx,hdmi-tx-offset = <0x90000>;
-		xlnx,vtc-offset = <0xa0000>;
-		xlnx,hdcp22-tx-offset = <0x40000>;
-		/* relative to xlnx,hdcp22-tx-offset */
-		xlnx,hdcp22-cipher-offset = <0x00000>;
-		xlnx,hdcp22-timer-offset = <0x10000>;
-		xlnx,hdcp22-rng-offset = <0x20000>;
-	
-		xlnx,hdcp1x-timer-offset = <0x00000>;
-		xlnx,hdcp1x-offset = <0x80000>;
-	
+		xlnx,include-hdcp-1-4;
+		xlnx,include-hdcp-2-2;
+
 		/* settings for HDCP */
 		xlnx,hdcp-authenticate = <0x0>;
 		xlnx,hdcp-encrypt = <0x0>;			
