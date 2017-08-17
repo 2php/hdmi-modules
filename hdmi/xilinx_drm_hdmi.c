@@ -1510,6 +1510,8 @@ static int xilinx_drm_hdmi_probe(struct platform_device *pdev)
 	unsigned int index;
 	struct resource *res;
 	unsigned long axi_clk_rate;
+	struct platform_driver *pdrv;
+	struct drm_platform_encoder_driver *drm_enc_pdrv;
 
 	dev_info(&pdev->dev, "xlnx-hdmi-tx probed\n");
 	/* allocate zeroed HDMI TX device structure */
@@ -1730,6 +1732,11 @@ static int xilinx_drm_hdmi_probe(struct platform_device *pdev)
 	  hdcp_poll_work(&xhdmi->delayed_work_hdcp_poll.work);
 	}
 
+	/* register the encoder init callback */
+	pdrv = to_platform_driver(xhdmi->dev->driver);
+	drm_enc_pdrv = to_drm_platform_encoder_driver(pdrv);
+	drm_enc_pdrv->encoder_init = xilinx_drm_hdmi_encoder_init;
+
 	/* remainder of initialization is in encoder_init() */
 	dev_info(xhdmi->dev, "xlnx-hdmi-txss probe successful\n");
 
@@ -1752,7 +1759,13 @@ error_phy:
 
 static int xilinx_drm_hdmi_remove(struct platform_device *pdev)
 {
+	struct platform_driver *pdrv;
+	struct drm_platform_encoder_driver *drm_enc_pdrv;
 	struct xilinx_drm_hdmi *xhdmi = platform_get_drvdata(pdev);
+
+	pdrv = to_platform_driver(xhdmi->dev->driver);
+	drm_enc_pdrv = to_drm_platform_encoder_driver(pdrv);
+	drm_enc_pdrv->encoder_init = NULL;
 	if (xhdmi->work_queue) destroy_workqueue(xhdmi->work_queue);
 	return 0;
 }
@@ -1773,7 +1786,6 @@ static struct drm_platform_encoder_driver xilinx_drm_hdmi_driver = {
 			.of_match_table	= xilinx_drm_hdmi_of_match,
 		},
 	},
-	.encoder_init = xilinx_drm_hdmi_encoder_init,
 };
 
 static int __init xilinx_drm_hdmi_init(void)
