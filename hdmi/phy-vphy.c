@@ -228,7 +228,7 @@ static irqreturn_t xvphy_irq_thread(int irq, void *dev_id)
 		XVPHY_INTR_HANDLER_TYPE_TX_TMR_TIMEOUT |
 		XVPHY_INTR_HANDLER_TYPE_RX_TMR_TIMEOUT);
 
-#ifdef DEBUG		
+#ifdef DEBUG
 	XVphy_LogDisplay(&vphydev->xvphy);
 #endif
 	return IRQ_HANDLED;
@@ -301,6 +301,31 @@ static struct phy *xvphy_xlate(struct device *dev,
 	BUG_ON(!vphy_lane->phy);
 	return vphy_lane->phy;
 }
+
+static ssize_t vphy_log_show(struct device *sysfs_dev, struct device_attribute *attr,
+	char *buf)
+{
+	XVphy *VphyPtr;
+	struct xvphy_dev *vphydev = (struct xvphy_dev *)dev_get_drvdata(sysfs_dev);
+	VphyPtr = &vphydev->xvphy;
+	BUG_ON(!VphyPtr);
+	return sprintf(buf, "vphy_log_show()\n");
+}
+
+DEVICE_ATTR(vphy_log, 0664, vphy_log_show, NULL/*store*/);
+
+static struct attribute *attrs[] = {
+	&dev_attr_vphy_log.attr, NULL,
+};
+
+static struct attribute_group attr_group = {
+	.name = "logs",
+	.attrs = attrs,
+};
+
+static const struct attribute_group *attr_groups[] = {
+	&attr_group, NULL,
+};
 
 /* Local Global table for phy instance(s) configuration settings */
 XVphy_Config XVphy_ConfigTable[XPAR_XVPHY_NUM_INSTANCES];
@@ -616,7 +641,7 @@ MODULE_DESCRIPTION("Xilinx Vphy driver");
 
 /* phy sub-directory is used as a place holder for all shared code for
    hdmi-rx and hdmi-tx driver. All shared API's need to be exported */
-   
+
 /* Configuration Tables for hdcp */
 XHdcp1x_Config XHdcp1x_ConfigTable[XPAR_XHDCP_NUM_INSTANCES];
 XTmrCtr_Config XTmrCtr_ConfigTable[XPAR_XTMRCTR_NUM_INSTANCES];
@@ -650,10 +675,10 @@ EXPORT_SYMBOL_GPL(XHdcp22_Rx_ConfigTable);
 EXPORT_SYMBOL_GPL(XHdcp22_Tx_ConfigTable);
 
 /* Global API's for xhdcp1x */
-EXPORT_SYMBOL_GPL(XHdcp1x_SetDebugPrintf); 
-EXPORT_SYMBOL_GPL(XHdcp1x_SetTopologyUpdate); 
-EXPORT_SYMBOL_GPL(XHdcp22Rx_LoadPublicCert); 
-EXPORT_SYMBOL_GPL(XHdcp22Rx_LoadLc128); 
+EXPORT_SYMBOL_GPL(XHdcp1x_SetDebugPrintf);
+EXPORT_SYMBOL_GPL(XHdcp1x_SetTopologyUpdate);
+EXPORT_SYMBOL_GPL(XHdcp22Rx_LoadPublicCert);
+EXPORT_SYMBOL_GPL(XHdcp22Rx_LoadLc128);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_IsEnabled);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_IsRepeater);
 EXPORT_SYMBOL_GPL(XHdcp1x_GetVersion);
@@ -677,7 +702,7 @@ EXPORT_SYMBOL_GPL(XHdcp1x_IsEnabled);
 EXPORT_SYMBOL_GPL(XHdcp1x_Disable);
 EXPORT_SYMBOL_GPL(XHdcp1x_SetDebugLogMsg);
 EXPORT_SYMBOL_GPL(XHdcp1x_SetTopologyKSVList);
-EXPORT_SYMBOL_GPL(XHdcp1x_IsEncrypted); 
+EXPORT_SYMBOL_GPL(XHdcp1x_IsEncrypted);
 EXPORT_SYMBOL_GPL(XHdcp1x_SetCallback);
 EXPORT_SYMBOL_GPL(XHdcp1x_HandleTimeout);
 EXPORT_SYMBOL_GPL(XHdcp1x_Poll);
@@ -705,10 +730,10 @@ EXPORT_SYMBOL_GPL(XTmrCtr_SetOptions);
 EXPORT_SYMBOL_GPL(XTmrCtr_SetResetValue);
 EXPORT_SYMBOL_GPL(XTmrCtr_SetHandler);
 EXPORT_SYMBOL_GPL(XTmrCtr_InterruptHandler);
-EXPORT_SYMBOL_GPL(XTmrCtr_Offsets); 
+EXPORT_SYMBOL_GPL(XTmrCtr_Offsets);
 EXPORT_SYMBOL_GPL(XTmrCtr_LookupConfig);
 EXPORT_SYMBOL_GPL(XTmrCtr_GetOptions);
-EXPORT_SYMBOL_GPL(XTmrCtr_Stop); 
+EXPORT_SYMBOL_GPL(XTmrCtr_Stop);
 
 /* Global API's for xhdcp22Rx */
 EXPORT_SYMBOL_GPL(XHdcp22Rx_IsAuthenticated);
@@ -728,7 +753,7 @@ EXPORT_SYMBOL_GPL(XHdcp22Rx_Disable);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_LoadPrivateKey);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_SetTopologyField);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_SetReadMessageComplete);
-EXPORT_SYMBOL_GPL(XHdcp22Rx_GetContentStreamType); 
+EXPORT_SYMBOL_GPL(XHdcp22Rx_GetContentStreamType);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_LookupConfig);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_SetWriteMessageAvailable);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_SetTopology);
@@ -752,7 +777,7 @@ EXPORT_SYMBOL_GPL(XHdcp1x_Authenticate);
 EXPORT_SYMBOL_GPL(XHdcp22Tx_DisableEncryption);
 EXPORT_SYMBOL_GPL(XHdcp22Tx_LookupConfig);
 EXPORT_SYMBOL_GPL(XHdcp22Tx_LogReset);
-EXPORT_SYMBOL_GPL(XHdcp22Tx_IsDwnstrmCapable); 
+EXPORT_SYMBOL_GPL(XHdcp22Tx_IsDwnstrmCapable);
 EXPORT_SYMBOL_GPL(XHdcp22Tx_IsEncryptionEnabled);
 EXPORT_SYMBOL_GPL(XHdcp22Tx_SetRepeater);
 EXPORT_SYMBOL_GPL(XHdcp22Tx_Authenticate);
