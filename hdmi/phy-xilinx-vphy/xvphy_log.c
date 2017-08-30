@@ -166,13 +166,14 @@ u16 XVphy_LogRead(XVphy *InstancePtr)
 *
 * @param	InstancePtr is a pointer to the XVphy core instance.
 *
-* @return	None.
+* @return	number of bytes written to buff.
 *
 * @note		None.
 *
 ******************************************************************************/
-void XVphy_LogDisplay(XVphy *InstancePtr)
+int XVphy_LogShow(XVphy *InstancePtr, char *buff, int buff_size)
 {
+	int strSize = 0;
 #ifdef XV_VPHY_LOG_ENABLE
 	u16 Log;
 	u8 Evt;
@@ -181,13 +182,12 @@ void XVphy_LogDisplay(XVphy *InstancePtr)
 	/* Verify argument. */
 	Xil_AssertVoid(InstancePtr != NULL);
 
-	xil_printf("\r\n\n\nVPHY log\r\n");
-	xil_printf("------\r\n");
-
+	strSize = scnprintf(buff, buff_size, "\r\n\n\nVPHY log\r\n" \
+			"------\r\n");
 	/* Read log data */
 	Log = XVphy_LogRead(InstancePtr);
 
-	while (Log != 0) {
+	while (Log != 0 && (buff_size - strSize) > 30 ) {
 		/* Event */
 		Evt = Log & 0xff;
 
@@ -196,272 +196,353 @@ void XVphy_LogDisplay(XVphy *InstancePtr)
 
 		switch (Evt) {
 		case (XVPHY_LOG_EVT_NONE):
-			xil_printf("GT log end\r\n-------\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"GT log end\r\n-------\r\n");
 			break;
 		case (XVPHY_LOG_EVT_QPLL_EN):
-			xil_printf("QPLL enable (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"QPLL enable (%0d)\r\n", Data);
 			break;
 		case (XVPHY_LOG_EVT_QPLL_RST):
-			xil_printf("QPLL reset (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"QPLL reset (%0d)\r\n", Data);
 			break;
 		case (XVPHY_LOG_EVT_CPLL_EN):
-			xil_printf("CPLL enable (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"CPLL enable (%0d)\r\n", Data);
 			break;
 		case (XVPHY_LOG_EVT_CPLL_RST):
-			xil_printf("CPLL reset (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+				"CPLL reset (%0d)\r\n", Data);
 			break;
 		case (XVPHY_LOG_EVT_TXPLL_EN):
-			xil_printf("TX MMCM enable (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+				"TX MMCM enable (%0d)\r\n", Data);
 			break;
 		case (XVPHY_LOG_EVT_TXPLL_RST):
-			xil_printf("TX MMCM reset (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+				"TX MMCM reset (%0d)\r\n", Data);
 			break;
 		case (XVPHY_LOG_EVT_RXPLL_EN):
-			xil_printf("RX MMCM enable (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+				"RX MMCM enable (%0d)\r\n", Data);
 			break;
 		case (XVPHY_LOG_EVT_RXPLL_RST):
-			xil_printf("RX MMCM reset (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+				"RX MMCM reset (%0d)\r\n", Data);
 			break;
 		case (XVPHY_LOG_EVT_GTRX_RST):
-			xil_printf("GT RX reset (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"GT RX reset (%0d)\r\n", Data);
 			break;
 		case (XVPHY_LOG_EVT_GTTX_RST):
-			xil_printf("GT TX reset (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"GT TX reset (%0d)\r\n", Data);
 			break;
 		case (XVPHY_LOG_EVT_VID_TX_RST):
-			xil_printf("Video TX reset (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Video TX reset (%0d)\r\n", Data);
 			break;
 		case (XVPHY_LOG_EVT_VID_RX_RST):
-			xil_printf("Video RX reset (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Video RX reset (%0d)\r\n", Data);
 			break;
 		case (XVPHY_LOG_EVT_TX_ALIGN):
 			if (Data == 1) {
-				xil_printf("TX alignment done\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"TX alignment done\r\n");
 			}
 			else {
-				xil_printf("TX alignment start.\r\n.");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"TX alignment start.\r\n.");
 			}
 			break;
 		case (XVPHY_LOG_EVT_TX_ALIGN_TMOUT):
-				xil_printf("TX alignment watchdog timed out.\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX alignment watchdog timed out.\r\n");
 			break;
 		case (XVPHY_LOG_EVT_TX_TMR):
 			if (Data == 1) {
-				xil_printf("TX timer event\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"TX timer event\r\n");
 			}
 			else {
-				xil_printf("TX timer load\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"TX timer load\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_RX_TMR):
 			if (Data == 1) {
-				xil_printf("RX timer event\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"RX timer event\r\n");
 			}
 			else {
-				xil_printf("RX timer load\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"RX timer load\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_CPLL_RECONFIG):
 			if (Data == 1) {
-				xil_printf("CPLL reconfig done\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"CPLL reconfig done\r\n");
 			}
 			else {
-				xil_printf("CPLL reconfig start\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"CPLL reconfig start\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_GT_RECONFIG):
 			if (Data == 1) {
-				xil_printf("GT reconfig done\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"GT reconfig done\r\n");
 			}
 			else {
-				xil_printf("GT reconfig start\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"GT reconfig start\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_GT_TX_RECONFIG):
 			if (Data == 1) {
-				xil_printf("GT TX reconfig done\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"GT TX reconfig done\r\n");
 			}
 			else {
-				xil_printf("GT TX reconfig start\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"GT TX reconfig start\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_GT_RX_RECONFIG):
 			if (Data == 1) {
-				xil_printf("GT RX reconfig done\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"GT RX reconfig done\r\n");
 			}
 			else {
-				xil_printf("GT RX reconfig start\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"GT RX reconfig start\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_QPLL_RECONFIG):
 			if (Data == 1) {
-				xil_printf("QPLL reconfig done\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"QPLL reconfig done\r\n");
 			}
 			else {
-				xil_printf("QPLL reconfig start\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"QPLL reconfig start\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_PLL0_RECONFIG):
 			if (Data == 1) {
-				xil_printf("PLL0 reconfig done\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"PLL0 reconfig done\r\n");
 			}
 			else {
-				xil_printf("PLL0 reconfig start\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"PLL0 reconfig start\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_PLL1_RECONFIG):
 			if (Data == 1) {
-				xil_printf("PLL1 reconfig done\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"PLL1 reconfig done\r\n");
 			}
 			else {
-				xil_printf("PLL1 reconfig start\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"PLL1 reconfig start\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_INIT):
 			if (Data == 1) {
-				xil_printf("GT init done\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"GT init done\r\n");
 			}
 			else {
-				xil_printf("GT init start\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"GT init start\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_TXPLL_RECONFIG):
 			if (Data == 1) {
-				xil_printf("TX MMCM reconfig done\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"TX MMCM reconfig done\r\n");
 			}
 			else {
-				xil_printf("TX MMCM reconfig start\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"TX MMCM reconfig start\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_RXPLL_RECONFIG):
 			if (Data == 1) {
-				xil_printf("RX MMCM reconfig done\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"RX MMCM reconfig done\r\n");
 			}
 			else {
-				xil_printf("RX MMCM reconfig start\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"RX MMCM reconfig start\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_QPLL_LOCK):
 			if (Data == 1) {
-				xil_printf("QPLL lock\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"QPLL lock\r\n");
 			}
 			else {
-				xil_printf("QPLL lost lock\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"QPLL lost lock\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_PLL0_LOCK):
 			if (Data == 1) {
-				xil_printf("PLL0 lock\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"PLL0 lock\r\n");
 			}
 			else {
-				xil_printf("PLL0 lost lock\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"PLL0 lost lock\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_PLL1_LOCK):
 			if (Data == 1) {
-				xil_printf("PLL1 lock\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"PLL1 lock\r\n");
 			}
 			else {
-				xil_printf("PLL1 lost lock\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"PLL1 lost lock\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_CPLL_LOCK):
 			if (Data == 1) {
-				xil_printf("CPLL lock\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"CPLL lock\r\n");
 			}
 			else {
-				xil_printf("CPLL lost lock\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"CPLL lost lock\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_RXPLL_LOCK):
 			if (Data == 1) {
-				xil_printf("RX MMCM lock\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"RX MMCM lock\r\n");
 			}
 			else {
-				xil_printf("RX MMCM lost lock\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"RX MMCM lost lock\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_TXPLL_LOCK):
 			if (Data == 1) {
-				xil_printf("TX MMCM lock\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"TX MMCM lock\r\n");
 			}
 			else {
-				xil_printf("TX MMCM lost lock\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"TX MMCM lost lock\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_TX_RST_DONE):
-			xil_printf("TX reset done\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX reset done\r\n");
 			break;
 		case (XVPHY_LOG_EVT_RX_RST_DONE):
-			xil_printf("RX reset done\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"RX reset done\r\n");
 			break;
 		case (XVPHY_LOG_EVT_TX_FREQ):
-			xil_printf("TX frequency event\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX frequency event\r\n");
 			break;
 		case (XVPHY_LOG_EVT_RX_FREQ):
-			xil_printf("RX frequency event\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"RX frequency event\r\n");
 			break;
 		case (XVPHY_LOG_EVT_DRU_EN):
 			if (Data == 1) {
-				xil_printf("DRU enable\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"DRU enable\r\n");
 			}
 			else {
-				xil_printf("DRU disable\r\n");
+				strSize += scnprintf(buff+strSize, buff_size-strSize,
+						"DRU disable\r\n");
 			}
 			break;
 		case (XVPHY_LOG_EVT_GT_PLL_LAYOUT):
-				xil_printf("Error! Couldn't find the correct GT "
-						"parameters for this video resolution.\n\r");
-				xil_printf("Try another GT PLL layout.\n\r");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Error! Couldn't find the correct GT "
+					"parameters for this video resolution.\n\r");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Try another GT PLL layout.\n\r");
 			break;
 		case (XVPHY_LOG_EVT_GT_UNBONDED):
-				xil_printf("WARNING: "
-						"Transmitter cannot be used on\r\n");
-				xil_printf("         "
-						"bonded mode when DRU is enabled\r\n");
-				xil_printf("Switch to unbonded PLL layout\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"WARNING: "
+					"Transmitter cannot be used on\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"         "
+					"bonded mode when DRU is enabled\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Switch to unbonded PLL layout\r\n");
 			break;
 		case (XVPHY_LOG_EVT_1PPC_ERR):
-				xil_printf("Error! The Video PHY cannot support this video ");
-				xil_printf("format at PPC = 1\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Error! The Video PHY cannot support this video ");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+				"format at PPC = 1\r\n");
 			break;
 		case (XVPHY_LOG_EVT_PPC_MSMTCH_ERR):
-				xil_printf("Warning: HDMI TX SS PPC value, doesn't match with"
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Warning: HDMI TX SS PPC value, doesn't match with"
 					" VPhy PPC value\r\n");
 			break;
 		case (XVPHY_LOG_EVT_VDCLK_HIGH_ERR):
-				xil_printf("Error! GTPE2 Video PHY cannot"
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Error! GTPE2 Video PHY cannot"
 								"support resolutions");
-				xil_printf("\r\n\twith video clock > 148.5 MHz.\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"\r\n\twith video clock > 148.5 MHz.\r\n");
 			break;
 		case (XVPHY_LOG_EVT_NO_DRU):
-				xil_printf("Low resolution video isn't supported in "
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Low resolution video isn't supported in "
 						"this version.\r\n No DRU instance found.\r\n");
 			break;
 		case (XVPHY_LOG_EVT_GT_QPLL_CFG_ERR):
-				xil_printf("QPLL config not found!\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"QPLL config not found!\r\n");
 			break;
 		case (XVPHY_LOG_EVT_GT_CPLL_CFG_ERR):
-				xil_printf("CPLL config not found!\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"CPLL config not found!\r\n");
 			break;
 		case (XVPHY_LOG_EVT_VD_NOT_SPRTD_ERR):
-				xil_printf("Warning: This video format is not "
-								"supported by this device\r\n");
-				xil_printf("         "
-								"Change to another format\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Warning: This video format is not "
+					"supported by this device\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"         "
+					"Change to another format\r\n");
 			break;
 		case (XVPHY_LOG_EVT_MMCM_ERR):
-				xil_printf("MMCM config not found!\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"MMCM config not found!\r\n");
 			break;
 		default:
-			xil_printf("Unknown event\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Unknown event %i\r\n", Evt);
 			break;
 		}
 
-		/* Read log data */
-		Log = XVphy_LogRead(InstancePtr);
+		if((buff_size - strSize) > 30)
+		{
+			/* Read log data */
+			Log = XVphy_LogRead(InstancePtr);
+		} else {
+			Log = 0;
+		}
 	}
 #else
     xil_printf("\r\nINFO:: VPHY Log Feature is Disabled \r\n");
 #endif
+    return strSize;
 }

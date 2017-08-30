@@ -752,7 +752,7 @@ void XVphy_Set8b10b(XVphy *InstancePtr, u8 QuadId, XVphy_ChannelId ChId,
 u32 XVphy_IsBonded(XVphy *InstancePtr, u8 QuadId, XVphy_ChannelId ChId);
 
 /* xvphy_log.c: Logging functions. */
-void XVphy_LogDisplay(XVphy *InstancePtr);
+int XVphy_LogShow(XVphy *InstancePtr, char *buff, int buff_size);
 void XVphy_LogReset(XVphy *InstancePtr);
 u16 XVphy_LogRead(XVphy *InstancePtr);
 #ifdef XV_VPHY_LOG_ENABLE

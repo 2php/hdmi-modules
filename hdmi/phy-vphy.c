@@ -228,9 +228,6 @@ static irqreturn_t xvphy_irq_thread(int irq, void *dev_id)
 		XVPHY_INTR_HANDLER_TYPE_TX_TMR_TIMEOUT |
 		XVPHY_INTR_HANDLER_TYPE_RX_TMR_TIMEOUT);
 
-#ifdef DEBUG		
-	XVphy_LogDisplay(&vphydev->xvphy);
-#endif
 	return IRQ_HANDLED;
 }
 
