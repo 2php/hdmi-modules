@@ -430,7 +430,7 @@ void XV_HdmiRxSs_LogReset(XV_HdmiRxSs *InstancePtr);
 void XV_HdmiRxSs_LogWrite(XV_HdmiRxSs *InstancePtr, XV_HdmiRxSs_LogEvent Evt, u8 Data);
 u16 XV_HdmiRxSs_LogRead(XV_HdmiRxSs *InstancePtr);
 #endif
-void XV_HdmiRxSs_LogDisplay(XV_HdmiRxSs *InstancePtr);
+int XV_HdmiRxSs_LogShow(XV_HdmiRxSs *InstancePtr, char * buff, int buff_size);
 
 #ifdef USE_HDCP_RX
 void XV_HdmiRxSs_HdcpSetKey(XV_HdmiRxSs *InstancePtr, XV_HdmiRxSs_HdcpKeyType KeyType, u8 *KeyPtr);

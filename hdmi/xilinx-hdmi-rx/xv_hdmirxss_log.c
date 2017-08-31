@@ -154,14 +154,17 @@ u16 XV_HdmiRxSs_LogRead(XV_HdmiRxSs *InstancePtr)
 * This function will print the entire log.
 *
 * @param    InstancePtr is a pointer to the XV_HdmiRxSs core instance.
+* @param	buff Buffer to print to
+* @param	buff_size size off buff passed
 *
-* @return   None.
+* @return   number of characters written to buff
 *
 * @note     None.
 *
 ******************************************************************************/
-void XV_HdmiRxSs_LogDisplay(XV_HdmiRxSs *InstancePtr)
+int XV_HdmiRxSs_LogShow(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
 {
+	int strSize = -1;
 #ifdef XV_HDMIRXSS_LOG_ENABLE
     u16 Log;
     u8 Evt;
@@ -170,104 +173,135 @@ void XV_HdmiRxSs_LogDisplay(XV_HdmiRxSs *InstancePtr)
     /* Verify argument. */
     Xil_AssertVoid(InstancePtr != NULL);
 
-    xil_printf("\r\n\n\nHDMI RX log\r\n");
-    xil_printf("------\r\n");
+	strSize = scnprintf(buff+strSize, buff_size-strSize,
+			"\r\n\n\nHDMI RX log\r\n" \
+			"------\r\n");
 
     /* Read log data */
     Log = XV_HdmiRxSs_LogRead(InstancePtr);
 
-    while (Log != 0) {
+    while (Log != 0 && (buff_size - strSize) > 30 ) {
         /* Event */
         Evt = Log & 0xff;
 
         /* Data */
         Data = (Log >> 8) & 0xFF;
-        Data = Data;
 
         switch (Evt) {
         case (XV_HDMIRXSS_LOG_EVT_NONE):
-            xil_printf("HDMI RXSS log end\r\n-------\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"HDMI RXSS log end\r\n-------\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_HDMIRX_INIT):
-            xil_printf("Initializing HDMI RX core....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Initializing HDMI RX core....\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_VTC_INIT):
-            xil_printf("Initializing VTC core....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Initializing VTC core....\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_HDCPTIMER_INIT):
-            xil_printf("Initializing AXI Timer core....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Initializing AXI Timer core....\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_HDCP14_INIT):
-            xil_printf("Initializing HDCP 1.4 core....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Initializing HDCP 1.4 core....\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_HDCP22_INIT):
-            xil_printf("Initializing HDCP 2.2 core....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Initializing HDCP 2.2 core....\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_START):
-            xil_printf("Start HDMI RX Subsystem....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Start HDMI RX Subsystem....\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_STOP):
-            xil_printf("Stop HDMI RX Subsystem....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Stop HDMI RX Subsystem....\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_RESET):
-            xil_printf("Reset HDMI RX Subsystem....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Reset HDMI RX Subsystem....\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_CONNECT):
-            xil_printf("RX cable is connected....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"RX cable is connected....\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_DISCONNECT):
-            xil_printf("RX cable is disconnected....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"RX cable is disconnected....\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_LINKSTATUS):
-            xil_printf("RX Link Status Error....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"RX Link Status Error....\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_STREAMUP):
-            xil_printf("RX Stream is Up\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"RX Stream is Up\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_STREAMDOWN):
-            xil_printf("RX Stream is Down\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"RX Stream is Down\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_STREAMINIT):
-            xil_printf("RX Stream Start\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"RX Stream Start\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_SETSTREAM):
-            xil_printf("RX Stream Init\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"RX Stream Init\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_REFCLOCKCHANGE):
-            xil_printf("RX TMDS reference clock change\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"RX TMDS reference clock change\r\n");
             break;
          case (XV_HDMIRXSS_LOG_EVT_HDCP14):
               if (Data) {
-                xil_printf("RX HDCP 1.4 Enabled\r\n");
+            		strSize += scnprintf(buff+strSize, buff_size-strSize,
+            				"RX HDCP 1.4 Enabled\r\n");
               } else {
-                xil_printf("RX HDCP 1.4 Disabled\r\n");
+            		strSize += scnprintf(buff+strSize, buff_size-strSize,
+            				"RX HDCP 1.4 Disabled\r\n");
               }
             break;
          case (XV_HDMIRXSS_LOG_EVT_HDCP22):
               if (Data) {
-                xil_printf("RX HDCP 2.2 Enabled\r\n");
+            		strSize += scnprintf(buff+strSize, buff_size-strSize,
+            				"RX HDCP 2.2 Enabled\r\n");
               } else {
-                xil_printf("RX HDCP 2.2 Disabled\r\n");
+            		strSize += scnprintf(buff+strSize, buff_size-strSize,
+            				"RX HDCP 2.2 Disabled\r\n");
               }
             break;
         case (XV_HDMIRXSS_LOG_EVT_DVIMODE):
-            xil_printf("RX mode changed to DVI\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"RX mode changed to DVI\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_HDMIMODE):
-            xil_printf("RX mode changed to HDMI\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"RX mode changed to HDMI\r\n");
             break;
         case (XV_HDMIRXSS_LOG_EVT_SYNCLOSS):
-            xil_printf("RX Sync Loss detected\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"RX Sync Loss detected\r\n");
             break;
         default:
-            xil_printf("Unknown event\r\n");
+        	strSize += scnprintf(buff+strSize, buff_size-strSize,
+        			"Unknown event: %i\r\n", Evt);
             break;
         }
 
-        /* Read log data */
-        Log = XV_HdmiRxSs_LogRead(InstancePtr);
+		if((buff_size - strSize) > 30)
+		{
+	        /* Read log data */
+	        Log = XV_HdmiRxSs_LogRead(InstancePtr);
+		} else {
+			Log = 0;
+		}
     }
 #else
     xil_printf("\r\n INFO:: HDMIRXSS Log Feature is Disabled \r\n");
 #endif
+    return strSize+1;
 }

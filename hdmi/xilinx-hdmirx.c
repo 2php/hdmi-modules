@@ -1021,7 +1021,7 @@ static void hdcp_info_work(struct work_struct *work)
 	HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
 	BUG_ON(!HdmiRxSsPtr);
 
-	XV_HdmiRxSs_LogDisplay(HdmiRxSsPtr);	
+//	XV_HdmiRxSs_LogDisplay(HdmiRxSsPtr);
 	XV_HdmiRxSs_HdcpInfo(HdmiRxSsPtr);
 }
 #endif
@@ -1673,7 +1673,7 @@ static int xhdmi_probe(struct platform_device *pdev)
 #ifdef DEBUG
 	//Enable detailed logging of HDCP cores
 	XV_HdmiRxSs_HdcpSetInfoDetail(HdmiRxSsPtr, TRUE);
-	XV_HdmiRxSs_LogDisplay(HdmiRxSsPtr);
+//	XV_HdmiRxSs_LogDisplay(HdmiRxSsPtr);
 #endif
 	platform_set_drvdata(pdev, xhdmi);
 	
