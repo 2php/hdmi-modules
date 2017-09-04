@@ -149,19 +149,23 @@ u16 XV_HdmiTxSs_LogRead(XV_HdmiTxSs *InstancePtr)
 	return Log;
 }
 #endif
+
 /*****************************************************************************/
 /**
-* This function will print the entire log.
+* This function will print the entire log to the passed buffer.
 *
 * @param	InstancePtr is a pointer to the XV_HdmiTxSs core instance.
+* @param	buff Buffer to print to
+* @param	buff_size size off buff passed
 *
 * @return	None.
 *
 * @note		None.
 *
 ******************************************************************************/
-void XV_HdmiTxSs_LogDisplay(XV_HdmiTxSs *InstancePtr)
+int XV_HdmiTxSs_LogDisplay(XV_HdmiTxSs *InstancePtr, char *buff, int buff_size)
 {
+	int strSize = -1;
 #ifdef XV_HDMITXSS_LOG_ENABLE
 	u16 Log;
 	u8 Evt;
@@ -170,86 +174,108 @@ void XV_HdmiTxSs_LogDisplay(XV_HdmiTxSs *InstancePtr)
 	/* Verify argument. */
 	Xil_AssertVoid(InstancePtr != NULL);
 
-	xil_printf("\r\n\n\nHDMI TX log\r\n");
-	xil_printf("------\r\n");
+	strSize = scnprintf(buff+strSize, buff_size-strSize,
+			"\r\n\n\nHDMI TX log\r\n" \
+			"------\r\n");
 
 	/* Read log data */
 	Log = XV_HdmiTxSs_LogRead(InstancePtr);
 
-	while (Log != 0) {
+	while (Log != 0 && (buff_size - strSize) > 30 ) {
 		/* Event */
 		Evt = Log & 0xff;
 
 		/* Data */
 		Data = (Log >> 8) & 0xFF;
-		Data = Data;
 
 		switch (Evt) {
 		case (XV_HDMITXSS_LOG_EVT_NONE):
-			xil_printf("HDMI TXSS log end\r\n-------\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"HDMI TXSS log end\r\n-------\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_HDMITX_INIT):
-		    xil_printf("Initializing HDMI TX core....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Initializing HDMI TX core....\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_VTC_INIT):
-		    xil_printf("Initializing VTC core....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Initializing VTC core....\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_HDCPTIMER_INIT):
-		    xil_printf("Initializing AXI Timer core....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Initializing AXI Timer core....\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_HDCP14_INIT):
-		    xil_printf("Initializing HDCP 1.4 core....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Initializing HDCP 1.4 core....\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_HDCP22_INIT):
-		    xil_printf("Initializing HDCP 2.2 core....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Initializing HDCP 2.2 core....\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_START):
-		    xil_printf("Start HDMI TX Subsystem....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Start HDMI TX Subsystem....\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_STOP):
-		    xil_printf("Stop HDMI TX Subsystem....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Stop HDMI TX Subsystem....\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_RESET):
-		    xil_printf("Reset HDMI TX Subsystem....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Reset HDMI TX Subsystem....\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_CONNECT):
-		    xil_printf("TX cable is connected....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX cable is connected....\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_DISCONNECT):
-		    xil_printf("TX cable is disconnected....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX cable is disconnected....\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_TOGGLE):
-		    xil_printf("TX cable is toggled....\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX cable is toggled....\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_STREAMUP):
-		    xil_printf("TX Stream is Up\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX Stream is Up\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_STREAMDOWN):
-		    xil_printf("TX Stream is Down\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX Stream is Down\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_STREAMSTART):
-		    xil_printf("TX Stream Start\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX Stream Start\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_SETAUDIOCHANNELS):
-		    xil_printf("TX Set Audio Channels (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX Set Audio Channels (%0d)\r\n", Data);
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_AUDIOMUTE):
-		    xil_printf("TX Audio Muted\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX Audio Muted\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_AUDIOUNMUTE):
-		    xil_printf("TX Audio Unmuted\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX Audio Unmuted\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_SETSTREAM):
-		    xil_printf("TX Set Stream, with TMDS (%0d)\r\n", Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX Set Stream, with TMDS (%0d)\r\n", Data);
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_HDCP14_AUTHREQ):
-		    xil_printf("TX HDCP 1.4 authentication request\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX HDCP 1.4 authentication request\r\n");
 			break;
 	    case (XV_HDMITXSS_LOG_EVT_HDCP22_AUTHREQ):
-		    xil_printf("TX HDCP 2.2 authentication request\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"TX HDCP 2.2 authentication request\r\n");
 			break;
 		default:
-			xil_printf("Unknown event\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Unknown event: %I\r\n", Data);
 			break;
 		}
 
@@ -259,4 +285,5 @@ void XV_HdmiTxSs_LogDisplay(XV_HdmiTxSs *InstancePtr)
 #else
     xil_printf("\r\n INFO:: HDMITXSS Log Feature is Disabled \r\n");
 #endif
+    return strSize+1;
 }
