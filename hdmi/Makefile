@@ -27,10 +27,10 @@ ccflags-y += -I${src}/phy-xilinx-vphy
 
 # the BSP code uses C99 style declarations. The kernel is on C89, but steps to C11 are underway.
 ccflags-y += -Wno-declaration-after-statement
-ccflags-y += -Wno-unused-function                                                
-ccflags-y += -Wno-unused-label                                                   
-ccflags-y += -Wno-unused-value                                                   
-ccflags-y += -Wno-unused-variable    
+ccflags-y += -Wno-unused-function
+ccflags-y += -Wno-unused-label
+ccflags-y += -Wno-unused-value
+ccflags-y += -Wno-unused-variable
 
 # V4L2 (HDMI RX)
 xilinx-hdmi-rx-objs := xilinx-hdmirx.o
@@ -115,6 +115,9 @@ xilinx-vphy-objs += phy-xilinx-vphy/aes.o
 xilinx-vphy-objs += phy-xilinx-vphy/hmac.o
 xilinx-vphy-objs += phy-xilinx-vphy/sha1.o
 xilinx-vphy-objs += phy-xilinx-vphy/sha2.o
+
+#hdcp key/password decryption
+xilinx-vphy-objs += phy-xilinx-vphy/aes256.o
 
 #timer
 xilinx-vphy-objs += phy-xilinx-vphy/xtmrctr.o

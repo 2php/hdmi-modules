@@ -299,30 +299,38 @@ static struct phy *xvphy_xlate(struct device *dev,
 	return vphy_lane->phy;
 }
 
+#if 0
 static ssize_t vphy_log_show(struct device *sysfs_dev, struct device_attribute *attr,
 	char *buf)
 {
+	ssize_t count;
 	XVphy *VphyPtr;
 	struct xvphy_dev *vphydev = (struct xvphy_dev *)dev_get_drvdata(sysfs_dev);
 	VphyPtr = &vphydev->xvphy;
 	BUG_ON(!VphyPtr);
-	return sprintf(buf, "vphy_log_show()\n");
+	count = XVphy_LogShow(VphyPtr, buf, PAGE_SIZE);
+	return count; //sprintf(buf, "vphy_log_show()\n");
 }
 
-DEVICE_ATTR(vphy_log, 0664, vphy_log_show, NULL/*store*/);
+static ssize_t vphy_log_store(struct device *sysfs_dev, struct device_attribute *attr,
+	const char *buf, size_t count)
+{ return count; }
+
+DEVICE_ATTR(vphy_log, 0664, vphy_log_show, vphy_log_store);
 
 static struct attribute *attrs[] = {
 	&dev_attr_vphy_log.attr, NULL,
 };
 
 static struct attribute_group attr_group = {
-	.name = "logs",
+	//.name = "logs",
 	.attrs = attrs,
 };
 
 static const struct attribute_group *attr_groups[] = {
 	&attr_group, NULL,
 };
+#endif
 
 /* Local Global table for phy instance(s) configuration settings */
 XVphy_Config XVphy_ConfigTable[XPAR_XVPHY_NUM_INSTANCES];
@@ -610,7 +618,14 @@ static int xvphy_probe(struct platform_device *pdev)
 		hdmi_dbg("DRU reference clock frequency %0d Hz\n\r",
 						XVphy_DruGetRefClkFreqHz(&vphydev->xvphy));
 	}
+
+#if 0 // /sys/devices/platform/amba_pl\@0/a0000000.v_hdmi_rx_ss/samples_per_frame
+	/* set the default attributes */
+	ret = sysfs_create_group(&vphydev->dev->kobj, &attr_group);
+	dev_info(&pdev->dev, "sysfs_create_group() = %d\n", ret);
+#endif
 	dev_info(&pdev->dev, "hdmi-vphy probe successful\n");
+
 	/* probe has succeeded for this instance, increment instance index */
 	instance++;
 	return 0;
@@ -670,6 +685,10 @@ EXPORT_SYMBOL_GPL(XHdcp22_mmult_ConfigTable);
 EXPORT_SYMBOL_GPL(XHdcp22_Rng_ConfigTable);
 EXPORT_SYMBOL_GPL(XHdcp22_Rx_ConfigTable);
 EXPORT_SYMBOL_GPL(XHdcp22_Tx_ConfigTable);
+
+EXPORT_SYMBOL_GPL(XHdcp22Cmn_Sha256Hash);
+EXPORT_SYMBOL_GPL(XHdcp22Cmn_HmacSha256Hash);
+EXPORT_SYMBOL_GPL(XHdcp22Cmn_Aes128Encrypt);
 
 /* Global API's for xhdcp1x */
 EXPORT_SYMBOL_GPL(XHdcp1x_SetDebugPrintf);
@@ -798,3 +817,4 @@ EXPORT_SYMBOL_GPL(XHdcp22Tx_Poll);
 #ifdef DEBUG
 EXPORT_SYMBOL_GPL(XVphy_HdmiDebugInfo);
 #endif
+EXPORT_SYMBOL_GPL(XVphy_LogShow);
