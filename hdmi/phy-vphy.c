@@ -647,6 +647,7 @@ EXPORT_SYMBOL_GPL(XHdcp22_Rx_ConfigTable);
 EXPORT_SYMBOL_GPL(XHdcp22_Tx_ConfigTable);
 
 /* Global API's for xhdcp1x */
+EXPORT_SYMBOL_GPL(XHdcp1x_SetDebugBufPrintf);
 EXPORT_SYMBOL_GPL(XHdcp1x_SetDebugPrintf); 
 EXPORT_SYMBOL_GPL(XHdcp1x_SetTopologyUpdate); 
 EXPORT_SYMBOL_GPL(XHdcp22Rx_LoadPublicCert); 
