@@ -1097,7 +1097,7 @@ static int xilinx_drm_hdmi_encoder_init(struct platform_device *pdev,
 #ifdef DEBUG	
 	//Enable detailed logging for hdcp
 	XV_HdmiTxSs_HdcpSetInfoDetail(HdmiTxSsPtr, TRUE);
-	XV_HdmiTxSs_LogDisplay(HdmiTxSsPtr);
+//	XV_HdmiTxSs_LogDisplay(HdmiTxSsPtr);
 #endif
 	
 	hdmi_mutex_unlock(&xhdmi->hdmi_mutex);
@@ -1157,7 +1157,7 @@ static void hdcp_info_work(struct work_struct *work)
 	HdmiTxSsPtr = (XV_HdmiTxSs *)&xhdmi->xv_hdmitxss;
 	BUG_ON(!HdmiTxSsPtr);
 
-	XV_HdmiTxSs_LogDisplay(HdmiTxSsPtr);
+//	XV_HdmiTxSs_LogDisplay(HdmiTxSsPtr);
 	XV_HdmiTxSs_HdcpInfo(HdmiTxSsPtr);
 }
 #endif
