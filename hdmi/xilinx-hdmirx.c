@@ -58,6 +58,7 @@
 } while(0)
 #endif
 
+
 /* Use hdmi_dbg to debug control flow.
  * Use dev_err() to report errors to user.
  * either enable or disable debugging. */
@@ -152,6 +153,11 @@ struct xhdmi_device {
 	u8 hdcp_password[32];
 	/* pointer to xvphy */
 	XVphy *xvphy;
+	/* */
+	u8 Hdcp22Lc128[16];
+	u8 Hdcp22PrivateKey[902];
+	u8 Hdcp14KeyA[328];
+	u8 Hdcp14KeyB[328];
 };
 
 // Xilinx EDID
@@ -1415,17 +1421,17 @@ static void Decrypt(const u8 *CipherBufferPtr/*src*/, u8 *PlainBufferPtr/*dst*/,
 #define HDCP14_KEY1_OFFSET			1024
 #define HDCP14_KEY2_OFFSET			1536
 
-static u8 hdcp_keys[2048];
+//static u8 hdcp_keys[2048];
 
-/* buffer points to the EEPROM data, password points to a 32-character password */
+/* buffer points to the encrypted data (from EEPROM), password points to a 32-character password */
 static int XHdcp_LoadKeys(const u8 *Buffer, u8 *Password, u8 *Hdcp22Lc128, u32 Hdcp22Lc128Size, u8 *Hdcp22RxPrivateKey, u32 Hdcp22RxPrivateKeySize,
 	u8 *Hdcp14KeyA, u32 Hdcp14KeyASize, u8 *Hdcp14KeyB, u32 Hdcp14KeyBSize)
 {
 	u8 i;
-	u8 HdcpSignature[16] = {"xilinx_hdcp_keys"};
+	const u8 HdcpSignature[16] = { "xilinx_hdcp_keys" };
 	u8 Key[32];
 	u8 SignatureOk;
-	u8 HdcpSignatureBuffer[17];
+	u8 HdcpSignatureBuffer[16];
 
 	// Generate password hash
 	XHdcp22Cmn_Sha256Hash(Password, 32, Key);
@@ -1433,31 +1439,24 @@ static int XHdcp_LoadKeys(const u8 *Buffer, u8 *Password, u8 *Hdcp22Lc128, u32 H
 	/* decrypt the signature */
 	Decrypt(&Buffer[SIGNATURE_OFFSET]/*source*/, HdcpSignatureBuffer/*destination*/, Key, sizeof(HdcpSignature));
 
-	SignatureOk = TRUE;
+	SignatureOk = 1;
 	for (i = 0; i < sizeof(HdcpSignature); i++) {
 		if (HdcpSignature[i] != HdcpSignatureBuffer[i])
-			SignatureOk = FALSE;
-	}
-	HdcpSignatureBuffer[16] = 0;
-	printk(KERN_INFO "HDCP key store signature: %s\n", HdcpSignatureBuffer);
-
-	if (SignatureOk == FALSE) {
-		printk(KERN_INFO "HDCP key store signature mismatch.\n");
-	} else {
-		printk(KERN_INFO "HDCP key store signature OK.\n");
+			SignatureOk = 0;
 	}
 
 	/* password and buffer are correct, as the generated key could correctly decrypt the signature */
-	if (SignatureOk) {
+	if (SignatureOk == 1) {
 		/* decrypt the keys */
 		Decrypt(&Buffer[HDCP22_LC128_OFFSET], Hdcp22Lc128, Key, Hdcp22Lc128Size);
 		Decrypt(&Buffer[HDCP22_CERTIFICATE_OFFSET], Hdcp22RxPrivateKey, Key, Hdcp22RxPrivateKeySize);
 		Decrypt(&Buffer[HDCP14_KEY1_OFFSET], Hdcp14KeyA, Key, Hdcp14KeyASize);
 		Decrypt(&Buffer[HDCP14_KEY2_OFFSET], Hdcp14KeyB, Key, Hdcp14KeyBSize);
 		return XST_SUCCESS;
+	} else {
+		printk(KERN_INFO "HDCP key store signature mismatch; HDCP key data and/or password are invalid.\n");
 	}
 	return XST_FAILURE;
-
 }
 
 /* assume the HDCP C structures containing the keys are valid, and sets them in the bare-metal driver / IP */
@@ -1469,7 +1468,7 @@ static int hdcp_keys_configure(struct xhdmi_device *xhdmi)
 		u8 Status;
 		hdmi_dbg("HDCP1x components are all there.\n");
 		/* Set pointer to HDCP 1.4 key */
-		XV_HdmiRxSs_HdcpSetKey(HdmiRxSsPtr, XV_HDMIRXSS_KEY_HDCP14, Hdcp14KeyB);
+		XV_HdmiRxSs_HdcpSetKey(HdmiRxSsPtr, XV_HDMIRXSS_KEY_HDCP14, xhdmi->Hdcp14KeyB);
 		/* Key manager Init */
 		Status = XHdcp_KeyManagerInit((uintptr_t)xhdmi->hdcp1x_keymngmt_iomem, HdmiRxSsPtr->Hdcp14KeyPtr);
 		if (Status != XST_SUCCESS) {
@@ -1480,9 +1479,9 @@ static int hdcp_keys_configure(struct xhdmi_device *xhdmi)
 	}
 	if (xhdmi->config.Hdcp22.IsPresent) {
 		/* Set pointer to HDCP 2.2 LC128 */
-		XV_HdmiRxSs_HdcpSetKey(HdmiRxSsPtr, XV_HDMIRXSS_KEY_HDCP22_LC128, Hdcp22Lc128);
+		XV_HdmiRxSs_HdcpSetKey(HdmiRxSsPtr, XV_HDMIRXSS_KEY_HDCP22_LC128, xhdmi->Hdcp22Lc128);
 		/* Set pointer to HDCP 2.2 private key */
-		XV_HdmiRxSs_HdcpSetKey(HdmiRxSsPtr, XV_HDMIRXSS_KEY_HDCP22_PRIVATE, Hdcp22PrivateKey);
+		XV_HdmiRxSs_HdcpSetKey(HdmiRxSsPtr, XV_HDMIRXSS_KEY_HDCP22_PRIVATE, xhdmi->Hdcp22PrivateKey);
 	}
 	return 0;
 }
@@ -1493,25 +1492,21 @@ static ssize_t hdcp_key_store(struct device *sysfs_dev, struct device_attribute 
 	const char *buf, size_t count)
 {
 	long int i;
-	printk(KERN_INFO "hdcp_key_store()\n");
-	XV_HdmiRxSs *HdmiRxSsPtr;
-	XVphy *VphyPtr;
 	struct xhdmi_device *xhdmi = (struct xhdmi_device *)dev_get_drvdata(sysfs_dev);
-	HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
-	VphyPtr = xhdmi->xvphy;
+	XV_HdmiRxSs *HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
 	BUG_ON(!xhdmi);
 	BUG_ON(!HdmiRxSsPtr);
-	BUG_ON(!VphyPtr);
-	printk(KERN_INFO "hdcp_key_store(count = %d)\n", (int)count);
 	/* check for valid size of HDCP encrypted key binary blob, @TODO adapt */
-#if 0
-	if (count < 1024) return -EINVAL;
-#endif
+	if (count < 1872) {
+		printk(KERN_INFO "hdcp_key_store(count = %d, expected >=1872)\n", (int)count);
+		return -EINVAL;
+	}
 	/* decrypt the keys from the binary blob (buffer) into the C structures for keys */
-	if (XHdcp_LoadKeys(buf, xhdmi->hdcp_password, Hdcp22Lc128, sizeof(Hdcp22Lc128),
-		Hdcp22PrivateKey, sizeof(Hdcp22PrivateKey),
-		Hdcp14KeyA, sizeof(Hdcp14KeyA),
-		Hdcp14KeyB, sizeof(Hdcp14KeyB)) == XST_SUCCESS) {
+	if (XHdcp_LoadKeys(buf, xhdmi->hdcp_password,
+		xhdmi->Hdcp22Lc128, sizeof(xhdmi->Hdcp22Lc128),
+		xhdmi->Hdcp22PrivateKey, sizeof(xhdmi->Hdcp22PrivateKey),
+		xhdmi->Hdcp14KeyA, sizeof(xhdmi->Hdcp14KeyA),
+		xhdmi->Hdcp14KeyB, sizeof(xhdmi->Hdcp14KeyB)) == XST_SUCCESS) {
 
 		/* configure the keys in the IP */
 		hdcp_keys_configure(xhdmi);
@@ -1523,26 +1518,19 @@ static ssize_t hdcp_key_store(struct device *sysfs_dev, struct device_attribute 
 static ssize_t hdcp_password_store(struct device *sysfs_dev, struct device_attribute *attr,
 	const char *buf, size_t count)
 {
-	int i;
-	printk(KERN_INFO "hdcp_password_store()\n");
-	XV_HdmiRxSs *HdmiRxSsPtr;
-	XVphy *VphyPtr;
+	int i = 0;
 	struct xhdmi_device *xhdmi = (struct xhdmi_device *)dev_get_drvdata(sysfs_dev);
-	HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
-	VphyPtr = xhdmi->xvphy;
+	XV_HdmiRxSs *HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
 	BUG_ON(!xhdmi);
 	BUG_ON(!HdmiRxSsPtr);
-	BUG_ON(!VphyPtr);
 	if (count > sizeof(xhdmi->hdcp_password)) return -EINVAL;
-
 	/* copy password characters up to newline or carriage return */
-	while ((i < sizeof(xhdmi->hdcp_password)) && (i < count)) {
+	while ((i < count) && (i < sizeof(xhdmi->hdcp_password))) {
 		/* do not include newline or carriage return in password */
 		if ((buf[i] == '\n') || (buf[i] == '\r')) break;
 		xhdmi->hdcp_password[i] = buf[i];
 		i++;
 	}
-	printk(KERN_INFO "hdcp_password_store(count = %d), length = %d\n", (int)count, i);
 	/* zero remaining characters */
 	while (i < sizeof(xhdmi->hdcp_password)) {
 		xhdmi->hdcp_password[i] = 0;
@@ -1916,7 +1904,7 @@ static int xhdmi_probe(struct platform_device *pdev)
 	}
 #endif
 
-
+#if 0
 #if 0
 	/* could not set HDCP keys? */
 	if (hdcp_keys_configure(xhdmi) != 0) {
@@ -1946,6 +1934,7 @@ static int xhdmi_probe(struct platform_device *pdev)
 		/* Set pointer to HDCP 2.2 private key */
 		XV_HdmiRxSs_HdcpSetKey(HdmiRxSsPtr, XV_HDMIRXSS_KEY_HDCP22_PRIVATE, Hdcp22PrivateKey);
 	}
+#endif
 #endif
 
 	/* sets pointer to the EDID used by XV_HdmiRxSs_LoadDefaultEdid() */
