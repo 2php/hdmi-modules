@@ -440,7 +440,7 @@ int XV_HdmiTxSs_HdcpIsAuthenticated(XV_HdmiTxSs *InstancePtr);
 int XV_HdmiTxSs_HdcpIsEncrypted(XV_HdmiTxSs *InstancePtr);
 int XV_HdmiTxSs_HdcpIsInProgress(XV_HdmiTxSs *InstancePtr);
 
-void XV_HdmiTxSs_HdcpInfo(XV_HdmiTxSs *InstancePtr);
+int XV_HdmiTxSs_HdcpInfo(XV_HdmiTxSs *InstancePtr, char *buff, int buff_size);
 void XV_HdmiTxSs_HdcpSetInfoDetail(XV_HdmiTxSs *InstancePtr, u8 Verbose);
 
 void *XV_HdmiTxSs_HdcpGetTopology(XV_HdmiTxSs *InstancePtr);

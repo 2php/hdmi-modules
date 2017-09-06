@@ -1158,7 +1158,7 @@ static void hdcp_info_work(struct work_struct *work)
 	BUG_ON(!HdmiTxSsPtr);
 
 //	XV_HdmiTxSs_LogDisplay(HdmiTxSsPtr);
-	XV_HdmiTxSs_HdcpInfo(HdmiTxSsPtr);
+//	XV_HdmiTxSs_HdcpInfo(HdmiTxSsPtr);
 }
 #endif
 
