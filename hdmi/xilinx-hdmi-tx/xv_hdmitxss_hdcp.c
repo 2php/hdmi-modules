@@ -1498,20 +1498,24 @@ void XV_HdmiTxSs_HdcpSetKey(XV_HdmiTxSs *InstancePtr,
 * This function reports the HDCP info
 *
 * @param  InstancePtr pointer to XV_HdmiTxSs instance
-*
-* @return None.
+* @param buff The buffer to print to
+* @param buff_size The size of the buffer
+
+* @return The number of bytes written to buff.
 *
 * @note   None.
 *
 ******************************************************************************/
-void XV_HdmiTxSs_HdcpInfo(XV_HdmiTxSs *InstancePtr)
+int XV_HdmiTxSs_HdcpInfo(XV_HdmiTxSs *InstancePtr, char *buff, int buff_size)
 {
+  int strSize = -1;
   /* Verify argument. */
   Xil_AssertVoid(InstancePtr != NULL);
 
   switch (InstancePtr->HdcpProtocol) {
     case XV_HDMITXSS_HDCP_NONE :
-      xil_printf("\r\nHDCP TX is disabled\r\n");
+      strSize = scnprintf(buff+strSize, buff_size-strSize,
+          "\r\nHDCP TX is disabled\r\n");
       break;
 
 #ifdef XPAR_XHDCP_NUM_INSTANCES
@@ -1519,16 +1523,18 @@ void XV_HdmiTxSs_HdcpInfo(XV_HdmiTxSs *InstancePtr)
     case XV_HDMITXSS_HDCP_14 :
       if (InstancePtr->Hdcp14Ptr) {
         if (XHdcp1x_IsEnabled(InstancePtr->Hdcp14Ptr)) {
-          xil_printf("\r\nHDCP 1.4 TX Info\r\n");
+          strSize = scnprintf(buff+strSize, buff_size-strSize,
+              "\r\nHDCP 1.4 TX Info\r\n");
 
+          XHdcp1x_SetDebugBufPrintf(buff,buff_size, &strSize);
+          XHdcp1x_Info(InstancePtr->Hdcp14Ptr);
+          XHdcp1x_SetDebugBufPrintf(NULL,0, NULL);
           // Route debug output to xil_printf
           XHdcp1x_SetDebugPrintf((void *)printk);
-
-          // Display info
-          XHdcp1x_Info(InstancePtr->Hdcp14Ptr);
         }
         else {
-          xil_printf("\r\nHDCP 1.4 TX is disabled\r\n");
+          strSize = scnprintf(buff+strSize, buff_size-strSize,
+              "\r\nHDCP 1.4 TX is disabled\r\n");
         }
       }
       break;
@@ -1541,20 +1547,24 @@ void XV_HdmiTxSs_HdcpInfo(XV_HdmiTxSs *InstancePtr)
         if (XHdcp22Tx_IsEnabled(InstancePtr->Hdcp22Ptr)) {
           XHdcp22Tx_LogDisplay(InstancePtr->Hdcp22Ptr);
 
-          xil_printf("HDCP 2.2 TX Info\r\n");
+          strSize = scnprintf(buff+strSize, buff_size-strSize,
+              "HDCP 2.2 TX Info\r\n");
           XHdcp22Tx_Info(InstancePtr->Hdcp22Ptr);
         }
         else {
-          xil_printf("\r\nHDCP 2.2 TX is disabled\r\n");
+          strSize = scnprintf(buff+strSize, buff_size-strSize,
+              "\r\nHDCP 2.2 TX is disabled\r\n");
         }
       }
       break;
 #endif
 
     default:
-      xil_printf("\r\nHDCP Info Unknown?\r\n");
+      strSize = scnprintf(buff+strSize, buff_size-strSize,
+          "\r\nHDCP Info Unknown?\r\n");
       break;
   }
+  return strSize+1;
 }
 #endif
 
