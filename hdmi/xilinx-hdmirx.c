@@ -13,8 +13,8 @@
  */
 
 /* if both both DEBUG and DEBUG_TRACE are defined, trace_printk() is used */
-//#define DEBUG
-//#define DEBUG_TRACE
+#define DEBUG
+#define DEBUG_TRACE
 
 #include <linux/device.h>
 #include <linux/gpio/consumer.h>
@@ -1425,7 +1425,7 @@ static int XHdcp_LoadKeys(const u8 *Buffer, u8 *Password, u8 *Hdcp22Lc128, u32 H
 	u8 HdcpSignature[16] = {"xilinx_hdcp_keys"};
 	u8 Key[32];
 	u8 SignatureOk;
-	u8 HdcpSignatureBuffer[16];
+	u8 HdcpSignatureBuffer[17];
 
 	// Generate password hash
 	XHdcp22Cmn_Sha256Hash(Password, 32, Key);
@@ -1437,6 +1437,14 @@ static int XHdcp_LoadKeys(const u8 *Buffer, u8 *Password, u8 *Hdcp22Lc128, u32 H
 	for (i = 0; i < sizeof(HdcpSignature); i++) {
 		if (HdcpSignature[i] != HdcpSignatureBuffer[i])
 			SignatureOk = FALSE;
+	}
+	HdcpSignatureBuffer[16] = 0;
+	printk(KERN_INFO "HDCP key store signature: %s\n", HdcpSignatureBuffer);
+
+	if (SignatureOk == FALSE) {
+		printk(KERN_INFO "HDCP key store signature mismatch.\n");
+	} else {
+		printk(KERN_INFO "HDCP key store signature OK.\n");
 	}
 
 	/* password and buffer are correct, as the generated key could correctly decrypt the signature */

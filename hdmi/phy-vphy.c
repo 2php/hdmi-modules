@@ -23,8 +23,8 @@
  */
 
 /* if both both DEBUG and DEBUG_TRACE are defined, trace_printk() is used */
-//#define DEBUG
-//#define DEBUG_TRACE
+#define DEBUG
+#define DEBUG_TRACE
 
 #include <linux/clk.h>
 #include <linux/delay.h>
