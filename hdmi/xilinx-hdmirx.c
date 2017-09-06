@@ -1027,7 +1027,7 @@ static void hdcp_info_work(struct work_struct *work)
 	BUG_ON(!HdmiRxSsPtr);
 
 //	XV_HdmiRxSs_LogDisplay(HdmiRxSsPtr);
-//	XV_HdmiRxSs_HdcpInfo(HdmiRxSsPtr);
+	XV_HdmiRxSs_HdcpInfo(HdmiRxSsPtr);
 }
 #endif
 
@@ -1299,6 +1299,7 @@ static ssize_t hdmi_log_show(struct device *sysfs_dev, struct device_attribute *
 {
 	ssize_t count;
 	XV_HdmiRxSs *HdmiRxSsPtr;
+	XVphy *VphyPtr;
 	struct xhdmi_device *xhdmi = (struct xhdmi_device *)dev_get_drvdata(sysfs_dev);
 	HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
 	BUG_ON(!xhdmi);
@@ -1312,12 +1313,14 @@ static ssize_t hdcp_log_show(struct device *sysfs_dev, struct device_attribute *
 {
 	ssize_t count;
 	XV_HdmiRxSs *HdmiRxSsPtr;
+	XVphy *VphyPtr;
 	struct xhdmi_device *xhdmi = (struct xhdmi_device *)dev_get_drvdata(sysfs_dev);
 	HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
+	VphyPtr = xhdmi->xvphy;
 	BUG_ON(!xhdmi);
 	BUG_ON(!HdmiRxSsPtr);
-	count = XV_HdmiRxSs_HdcpInfo(HdmiRxSsPtr, buf, PAGE_SIZE);
-	return count;
+	BUG_ON(!VphyPtr);
+	return sprintf(buf, "hdcp_log_show()\n");
 }
 
 static ssize_t hdcp_enable(struct device *sysfs_dev, struct device_attribute *attr,
@@ -1326,10 +1329,13 @@ static ssize_t hdcp_enable(struct device *sysfs_dev, struct device_attribute *at
 	long int i;
 	printk(KERN_INFO "hdcp_enable()\n");
 	XV_HdmiRxSs *HdmiRxSsPtr;
+	XVphy *VphyPtr;
 	struct xhdmi_device *xhdmi = (struct xhdmi_device *)dev_get_drvdata(sysfs_dev);
 	HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
+	VphyPtr = xhdmi->xvphy;
 	BUG_ON(!xhdmi);
 	BUG_ON(!HdmiRxSsPtr);
+	BUG_ON(!VphyPtr);
 	if (kstrtol(buf, 10, &i)) {
 		printk(KERN_INFO "************ failed to convert buf to long\n");
 		return count;
@@ -1347,28 +1353,7 @@ static ssize_t hdcp_enable(struct device *sysfs_dev, struct device_attribute *at
  * In this implementation, the cipher is first copied to the plain buffer, where it is then decrypted in-place. This leaves the
  * source buffer intact.
  */
-#if 0
-Enter Password ->...........
-Encrypt signature  done
-Write signature (16 bytes)
-Verify signature ok (16 bytes)
-Encrypt LC128  done
-Write LC128 (16 bytes)
-Verify lc128 ok (16 bytes)
-Encrypt HDCP 2.2 Certificate  done
-Write HDCP 2.2 Certificate (912 bytes)
-Verify HDCP 2.2 Certificate ok (902 bytes)
-Encrypt HDCP 1.4 Key A  done
-Write HDCP 1.4 Key A (336 bytes)
-Verify HDCP 1.4 Key A ok (328 bytes)
-Encrypt HDCP 1.4 Key A  done
-Write HDCP 1.4 Key B (336 bytes)
-Verify HDCP 1.4 Key B ok (328 bytes)
-
-HDCP Key EEPROM completed.
-This application is stopped.
-#endif
-static void Decrypt(const u8 *CipherBufferPtr/*src*/, u8 *PlainBufferPtr/*dst*/, u8 *Key, u16 Length)
+static void Decrypt(u8 *CipherBufferPtr, u8 *PlainBufferPtr, u8 *Key, u16 Length)
 {
 	u8 i;
 	u8 *AesBufferPtr;
@@ -1394,7 +1379,7 @@ static void Decrypt(const u8 *CipherBufferPtr/*src*/, u8 *PlainBufferPtr/*dst*/,
 		// Decrypt
 		aes256_decrypt_ecb(&ctx, AesBufferPtr);
 
-		// Increment pointer
+			// Increment pointer
 		AesBufferPtr += 16;	// The aes always encrypts 16 bytes
 	}
 
@@ -1496,9 +1481,7 @@ static ssize_t hdcp_key_store(struct device *sysfs_dev, struct device_attribute 
 	BUG_ON(!VphyPtr);
 	printk(KERN_INFO "hdcp_key_store(count = %d)\n", (int)count);
 	/* check for valid size of HDCP encrypted key binary blob, @TODO adapt */
-#if 0
-	if (count < 1024) return -EINVAL;
-#endif
+	if (count > 2048) return -EINVAL;
 	/* decrypt the keys from the binary blob (buffer) into the C structures for keys */
 	if (XHdcp_LoadKeys(buf, xhdmi->hdcp_password, Hdcp22Lc128, sizeof(Hdcp22Lc128),
 		Hdcp22PrivateKey, sizeof(Hdcp22PrivateKey),
@@ -1527,19 +1510,18 @@ static ssize_t hdcp_password_store(struct device *sysfs_dev, struct device_attri
 	BUG_ON(!VphyPtr);
 	if (count > sizeof(xhdmi->hdcp_password)) return -EINVAL;
 
-	/* copy password characters up to newline or carriage return */
-	while ((i < sizeof(xhdmi->hdcp_password)) && (i < count)) {
+	/* copy password characters up to newline*/
+	while ((i < 32) && (i < count)) {
 		/* do not include newline or carriage return in password */
 		if ((buf[i] == '\n') || (buf[i] == '\r')) break;
 		xhdmi->hdcp_password[i] = buf[i];
 		i++;
 	}
-	printk(KERN_INFO "hdcp_password_store(count = %d), length = %d\n", (int)count, i);
-	/* zero remaining characters */
-	while (i < sizeof(xhdmi->hdcp_password)) {
+	while (i < 32) {
 		xhdmi->hdcp_password[i] = 0;
 		i++;
 	}
+	printk(KERN_INFO "hdcp_password_store(count = %d), length = %d\n", (int)count, i);
 	return count;
 }
 
@@ -1822,18 +1804,18 @@ static int xhdmi_probe(struct platform_device *pdev)
 	}
 
 	if (xhdmi->config.Hdcp14.IsPresent) {
-		xhdmi->hdcp1x_irq = platform_get_irq_byname(pdev, "hdcp1x");
-		hdmi_dbg("xhdmi->hdcp1x_irq = %d\n", xhdmi->hdcp1x_irq);
-		xhdmi->hdcp1x_timer_irq = platform_get_irq_byname(pdev, "hdcp1x-timer");
-		hdmi_dbg("xhdmi->hdcp1x_timer_irq = %d\n", xhdmi->hdcp1x_timer_irq);
-	}
+	  xhdmi->hdcp1x_irq = platform_get_irq_byname(pdev, "hdcp1x");
+	  hdmi_dbg("xhdmi->hdcp1x_irq = %d\n", xhdmi->hdcp1x_irq);
+	  xhdmi->hdcp1x_timer_irq = platform_get_irq_byname(pdev, "hdcp1x-timer");
+	  hdmi_dbg("xhdmi->hdcp1x_timer_irq = %d\n", xhdmi->hdcp1x_timer_irq);
+    }
 
 	if (xhdmi->config.Hdcp22.IsPresent) {
-		xhdmi->hdcp22_irq = platform_get_irq_byname(pdev, "hdcp22");
-		hdmi_dbg("xhdmi->hdcp22_irq = %d\n", xhdmi->hdcp22_irq);
-		xhdmi->hdcp22_timer_irq = platform_get_irq_byname(pdev, "hdcp22-timer");
-		hdmi_dbg("xhdmi->hdcp22_timer_irq = %d\n", xhdmi->hdcp22_timer_irq);
-	}
+	  xhdmi->hdcp22_irq = platform_get_irq_byname(pdev, "hdcp22");
+	  hdmi_dbg("xhdmi->hdcp22_irq = %d\n", xhdmi->hdcp22_irq);
+	  xhdmi->hdcp22_timer_irq = platform_get_irq_byname(pdev, "hdcp22-timer");
+	  hdmi_dbg("xhdmi->hdcp22_timer_irq = %d\n", xhdmi->hdcp22_timer_irq);
+    }
 
 	if (xhdmi->config.Hdcp14.IsPresent || xhdmi->config.Hdcp22.IsPresent) {
 	  INIT_DELAYED_WORK(&xhdmi->delayed_work_hdcp_poll, hdcp_poll_work/*function*/);
@@ -1845,7 +1827,6 @@ static int xhdmi_probe(struct platform_device *pdev)
 	HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
 	hdmi_mutex_lock(&xhdmi->xhdmi_mutex);
 
-#if 0
 	ret = devm_request_threaded_irq(&pdev->dev, xhdmi->irq, hdmirx_irq_handler, hdmirx_irq_thread,
 		IRQF_TRIGGER_HIGH, "xilinx-hdmi-rx", xhdmi/*dev_id*/);
 
@@ -1906,39 +1887,13 @@ static int xhdmi_probe(struct platform_device *pdev)
 			return ret;
 		}
 	}
-#endif
 
-
-#if 0
 	/* could not set HDCP keys? */
 	if (hdcp_keys_configure(xhdmi) != 0) {
-		dev_err(xhdmi->dev, "HDCP 1.4 RX Key Manager initialization error, from hdcp_keys_configure()\n");
+		dev_err(xhdmi->dev, "HDCP 1.4 RX Key Manager initialization error.\n");
 		hdmi_mutex_unlock(&xhdmi->xhdmi_mutex);
 		return -EINVAL;
 	}
-	#error LEON
-#else
-	if (xhdmi->config.Hdcp14.IsPresent && xhdmi->config.HdcpTimer.IsPresent && xhdmi->hdcp1x_keymngmt_iomem) {
-		u8 Status;
-		hdmi_dbg("HDCP1x components are all there.\n");
-		/* Set pointer to HDCP 1.4 key */
-		XV_HdmiRxSs_HdcpSetKey(HdmiRxSsPtr, XV_HDMIRXSS_KEY_HDCP14, Hdcp14KeyB);
-		/* Key manager Init */
-		Status = XHdcp_KeyManagerInit((uintptr_t)xhdmi->hdcp1x_keymngmt_iomem, HdmiRxSsPtr->Hdcp14KeyPtr);
-		if (Status != XST_SUCCESS) {
-			dev_err(xhdmi->dev, "HDCP 1.4 RX Key Manager initialization error.\n");
-			hdmi_mutex_unlock(&xhdmi->xhdmi_mutex);
-			return -EINVAL;
-		}
-		dev_info(xhdmi->dev, "HDCP 1.4 RX Key Manager initialized OK.\n");
-	}
-	if (xhdmi->config.Hdcp22.IsPresent) {
-		/* Set pointer to HDCP 2.2 LC128 */
-		XV_HdmiRxSs_HdcpSetKey(HdmiRxSsPtr, XV_HDMIRXSS_KEY_HDCP22_LC128, Hdcp22Lc128);
-		/* Set pointer to HDCP 2.2 private key */
-		XV_HdmiRxSs_HdcpSetKey(HdmiRxSsPtr, XV_HDMIRXSS_KEY_HDCP22_PRIVATE, Hdcp22PrivateKey);
-	}
-#endif
 
 	/* sets pointer to the EDID used by XV_HdmiRxSs_LoadDefaultEdid() */
 	XV_HdmiRxSs_SetEdidParam(HdmiRxSsPtr, (u8 *)&xilinx_edid[0], sizeof(xilinx_edid));
@@ -2019,7 +1974,7 @@ static int xhdmi_probe(struct platform_device *pdev)
 
 #ifdef DEBUG
 	//Enable detailed logging of HDCP cores
-//	XV_HdmiRxSs_HdcpSetInfoDetail(HdmiRxSsPtr, TRUE);
+	XV_HdmiRxSs_HdcpSetInfoDetail(HdmiRxSsPtr, TRUE);
 //	XV_HdmiRxSs_LogDisplay(HdmiRxSsPtr);
 #endif
 	platform_set_drvdata(pdev, xhdmi);
@@ -2074,6 +2029,12 @@ static int xhdmi_probe(struct platform_device *pdev)
 
 	hdmi_mutex_unlock(&xhdmi->xhdmi_mutex);
 
+	/* enable interrupts */
+	spin_lock_irqsave(&xhdmi->irq_lock, flags);
+	XV_HdmiRxSs_IntrEnable(HdmiRxSsPtr);
+	spin_unlock_irqrestore(&xhdmi->irq_lock, flags);
+
+	dev_info(xhdmi->dev, "hdmi-rx probe successful\n");
 	/* call into hdcp_poll_work, which will reschedule itself */
 	if (HdmiRxSsPtr->Config.Hdcp14.IsPresent || HdmiRxSsPtr->Config.Hdcp22.IsPresent) {
 		schedule_delayed_work(&xhdmi->delayed_work_hdcp_poll, msecs_to_jiffies(1));
@@ -2084,76 +2045,8 @@ static int xhdmi_probe(struct platform_device *pdev)
 	ret = sysfs_create_group(&xhdmi->dev->kobj, &attr_group);
 	dev_info(xhdmi->dev, "sysfs_create_group() = %d\n", ret);
 #endif
-
-	ret = devm_request_threaded_irq(&pdev->dev, xhdmi->irq, hdmirx_irq_handler, hdmirx_irq_thread,
-		IRQF_TRIGGER_HIGH, "xilinx-hdmi-rx", xhdmi/*dev_id*/);
-
-	if (ret) {
-		dev_err(&pdev->dev, "unable to request IRQ %d\n", xhdmi->irq);
-		hdmi_mutex_unlock(&xhdmi->xhdmi_mutex);
-		goto error_phy;
-	}
-
-	/* HDCP 1.4 Cipher interrupt */
-	if (xhdmi->hdcp1x_irq > 0) {
-		/* Request the HDCP14 interrupt */
-		ret = devm_request_threaded_irq(&pdev->dev, xhdmi->hdcp1x_irq, hdmirx_hdcp_irq_handler, hdmirx_hdcp_irq_thread,
-			IRQF_TRIGGER_HIGH /*| IRQF_SHARED*/, "xilinx-hdmirxss-hdcp1x-cipher", xhdmi/*dev_id*/);
-		if (ret) {
-			dev_err(&pdev->dev, "unable to request IRQ %d\n", xhdmi->hdcp1x_irq);
-			hdmi_mutex_unlock(&xhdmi->xhdmi_mutex);
-			return ret;
-		}
-	}
-
-	/* HDCP 1.4 Timer interrupt */
-	if (xhdmi->hdcp1x_timer_irq > 0) {
-		/* Request the HDCP14 interrupt */
-		ret = devm_request_threaded_irq(&pdev->dev, xhdmi->hdcp1x_timer_irq, hdmirx_hdcp_irq_handler, hdmirx_hdcp_irq_thread,
-			IRQF_TRIGGER_HIGH /*| IRQF_SHARED*/, "xilinx-hdmirxss-hdcp1x-timer", xhdmi/*dev_id*/);
-		if (ret) {
-			dev_err(&pdev->dev, "unable to request IRQ %d\n", xhdmi->hdcp1x_timer_irq);
-			hdmi_mutex_unlock(&xhdmi->xhdmi_mutex);
-			return ret;
-		}
-	}
-
-	/* HDCP 2.2 interrupt, unused currently */
-#if 0
-	if (xhdmi->hdcp22_irq > 0) {
-		/* Request the HDCP22 interrupt */
-		ret = devm_request_threaded_irq(&pdev->dev, xhdmi->hdcp22_irq, hdmirx_hdcp_irq_handler, hdmirx_hdcp_irq_thread,
-			IRQF_TRIGGER_HIGH /*| IRQF_SHARED*/, "xilinx-hdmirxss-hdcp22", xhdmi/*dev_id*/);
-		if (ret) {
-			dev_err(&pdev->dev, "unable to request IRQ %d\n", xhdmi->hdcp22_irq);
-				hdmi_mutex_unlock(&xhdmi->xhdmi_mutex);
-			hdmi_mutex_unlock(&xhdmi->xhdmi_mutex);
-			return ret;
-		}
-	}
-#endif
-	/* HDCP 2.2 Timer interrupt */
-	if (xhdmi->hdcp22_timer_irq > 0) {
-		/* Request the HDCP22 timer interrupt */
-		ret = devm_request_threaded_irq(&pdev->dev, xhdmi->hdcp22_timer_irq, hdmirx_hdcp_irq_handler, hdmirx_hdcp_irq_thread,
-			IRQF_TRIGGER_HIGH /*| IRQF_SHARED*/, "xilinx-hdmirxss-hdcp22-timer", xhdmi/*dev_id*/);
-		if (ret) {
-			dev_err(&pdev->dev, "unable to request IRQ %d\n", xhdmi->hdcp22_timer_irq);
-				hdmi_mutex_unlock(&xhdmi->xhdmi_mutex);
-			hdmi_mutex_unlock(&xhdmi->xhdmi_mutex);
-
-			return ret;
-		}
-	}
-	/* enable interrupts */
-	spin_lock_irqsave(&xhdmi->irq_lock, flags);
-	XV_HdmiRxSs_IntrEnable(HdmiRxSsPtr);
-	spin_unlock_irqrestore(&xhdmi->irq_lock, flags);
-
-
 	/* probe has succeeded for this instance, increment instance index */
 	instance++;
-	dev_info(xhdmi->dev, "hdmi-rx probe successful\n");
 
 	/* return success */
 	return 0;

@@ -1206,7 +1206,6 @@ int XHdcp1x_SetCallback(XHdcp1x *InstancePtr,
 void XHdcp1x_CipherIntrHandler(void *InstancePtr);
 void XHdcp1x_PortIntrHandler(void *InstancePtr, u32 IntCause);
 
-void XHdcp1x_SetDebugBufPrintf(char *buff, int buff_size, int *buff_pos);
 void XHdcp1x_SetDebugPrintf(XHdcp1x_Printf PrintfFunc);
 void XHdcp1x_SetDebugLogMsg(XHdcp1x_LogMsg LogFunc);
 

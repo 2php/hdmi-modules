@@ -487,7 +487,7 @@ static int XV_HdmiRxSs_HdcpProcessEvents(XV_HdmiRxSs *InstancePtr)
         // Set physical state
         XHdcp1x_SetPhysicalState(InstancePtr->Hdcp14Ptr, TRUE);
         XHdcp1x_Poll(InstancePtr->Hdcp14Ptr); // This is needed to ensure that the previous command is executed.
-
+		
       }
 #endif
       XV_HdmiRxSs_HdcpSetProtocol(InstancePtr, InstancePtr->HdcpProtocol);
@@ -1198,24 +1198,20 @@ void XV_HdmiRxSs_HdcpSetKey(XV_HdmiRxSs *InstancePtr, XV_HdmiRxSs_HdcpKeyType Ke
 * This function reports the HDCP information.
 *
 * @param InstancePtr is a pointer to the XV_HdmiRxSs instance.
-* @param buff The buffer to print to
-* @param buff_size The size of the buffer
-
-* @return The number of bytes written to buff.
+*
+* @return None.
 *
 * @note   None.
 *
 ******************************************************************************/
-int XV_HdmiRxSs_HdcpInfo(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
+void XV_HdmiRxSs_HdcpInfo(XV_HdmiRxSs *InstancePtr)
 {
-  int strSize = -1;
   /* Verify argument. */
   Xil_AssertVoid(InstancePtr != NULL);
 
   switch (InstancePtr->HdcpProtocol) {
     case XV_HDMIRXSS_HDCP_NONE :
-      strSize = scnprintf(buff+strSize, buff_size-strSize,
-          "\r\nHDCP RX is disabled\r\n");
+      xil_printf("\r\nHDCP RX is disabled\r\n");
       break;
 
 #ifdef XPAR_XHDCP_NUM_INSTANCES
@@ -1223,20 +1219,23 @@ int XV_HdmiRxSs_HdcpInfo(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
     case XV_HDMIRXSS_HDCP_14:
       if (InstancePtr->Hdcp14Ptr) {
         if (XHdcp1x_IsEnabled(InstancePtr->Hdcp14Ptr)) {
-          strSize = scnprintf(buff+strSize, buff_size-strSize,
-              "\r\nHDCP 1.4 RX Info\r\n" \
-              "Encryption : %s.\r\n",
-              (XHdcp1x_IsEncrypted(InstancePtr->Hdcp14Ptr) ? "Enabled" : "Disabled"));
+          xil_printf("\r\nHDCP 1.4 RX Info\r\n");
 
-          XHdcp1x_SetDebugBufPrintf(buff,buff_size, &strSize);
-          XHdcp1x_Info(InstancePtr->Hdcp14Ptr);
-          XHdcp1x_SetDebugBufPrintf(NULL,0, NULL);
+          xil_printf("Encryption : ");
+          if (XHdcp1x_IsEncrypted(InstancePtr->Hdcp14Ptr)) {
+            xil_printf("Enabled.\r\n");
+          } else {
+            xil_printf("Disabled.\r\n");
+          }
+
           // Route debug output to xil_printf
           XHdcp1x_SetDebugPrintf((void *)printk);
+
+          // Display info
+          XHdcp1x_Info(InstancePtr->Hdcp14Ptr);
         }
         else {
-          strSize = scnprintf(buff+strSize, buff_size-strSize,
-              "\r\nHDCP 1.4 RX is disabled\r\n");
+          xil_printf("\r\nHDCP 1.4 RX is disabled\r\n");
         }
       }
       break;
@@ -1249,21 +1248,19 @@ int XV_HdmiRxSs_HdcpInfo(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
         if (XHdcp22Rx_IsEnabled(InstancePtr->Hdcp22Ptr)) {
           XHdcp22Rx_LogDisplay(InstancePtr->Hdcp22Ptr);
 
-          strSize = scnprintf(buff+strSize, buff_size-strSize,
-              "HDCP 2.2 RX Info\r\n");
+          xil_printf("HDCP 2.2 RX Info\r\n");
           XHdcp22Rx_Info(InstancePtr->Hdcp22Ptr);
         }
         else {
-          strSize = scnprintf(buff+strSize, buff_size-strSize, "\r\nHDCP 2.2 RX is disabled\r\n");
+          xil_printf("\r\nHDCP 2.2 RX is disabled\r\n");
         }
       }
       break;
 #endif
 
     default:
-      strSize = scnprintf(buff+strSize, buff_size-strSize, "\r\nHDCP info unknown?\r\n");
+      xil_printf("\r\nHDCP info unknown?\r\n");
   }
-  return strSize;
 }
 #endif
 

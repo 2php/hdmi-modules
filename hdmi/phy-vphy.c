@@ -61,9 +61,8 @@
 #include "phy-xilinx-vphy/xhdcp22_rng.h"
 #include "phy-xilinx-vphy/xhdcp22_common.h"
 
-#include "phy-xilinx-vphy/aes256.h"
-
 #define XVPHY_DRU_REF_CLK_HZ	156250000
+
 
 /* select either trace or printk logging */
 #ifdef DEBUG_TRACE
@@ -253,6 +252,7 @@ static int xvphy_phy_init(struct phy *phy)
  *
  * Return: pointer to kernel PHY device or error on failure
  *
+ *
  */
 static struct phy *xvphy_xlate(struct device *dev,
 				   struct of_phandle_args *args)
@@ -341,7 +341,7 @@ static struct phy_ops xvphy_phyops = {
 };
 
 static int instance = 0;
-/* TX uses [1, 127], RX uses [128, 254] and VPHY uses [256, ...]. Note that 255 is used for not-present. */
+/* TX uses [1, 127] and RX uses [128, 254], VPHY uses [256, ...] */
 #define VPHY_DEVICE_ID_BASE 256
 
 static int vphy_parse_of(struct xvphy_dev *vphydev, XVphy_Config *c)
@@ -590,6 +590,7 @@ static int xvphy_probe(struct platform_device *pdev)
 			return PTR_ERR(provider);
 	}
 
+
 	/* Initialize HDMI VPHY */
 	Status = XVphy_HdmiInitialize(&vphydev->xvphy, 0/*QuadID*/,
 		&XVphy_ConfigTable[instance], axi_lite_rate);
@@ -601,10 +602,8 @@ static int xvphy_probe(struct platform_device *pdev)
 	Data = XVphy_GetVersion(&vphydev->xvphy);
 	printk(KERN_INFO "VPhy version : %02d.%02d (%04x)\n", ((Data >> 24) & 0xFF), ((Data >> 16) & 0xFF), (Data & 0xFFFF));
 
-#if 0 // issue was fixed in bare-metal, this is no longer required
 	DrpVal = XVphy_DrpRead(&vphydev->xvphy, 0/*QuadId*/, 1/*ChId*/, 0x7C);
 	hdmi_dbg("DrpVal @0x7C : 0x%08x%s\n", DrpVal, DrpVal & 0x2000?" GEARBOX ENABLED(?!)":" GEARBOX DISABLED");
-#endif
 
 	ret = devm_request_threaded_irq(&pdev->dev, vphydev->irq, xvphy_irq_handler, xvphy_irq_thread,
 			IRQF_TRIGGER_HIGH /*IRQF_SHARED*/, "xilinx-vphy", vphydev/*dev_id*/);
@@ -687,17 +686,12 @@ EXPORT_SYMBOL_GPL(XHdcp22_Rng_ConfigTable);
 EXPORT_SYMBOL_GPL(XHdcp22_Rx_ConfigTable);
 EXPORT_SYMBOL_GPL(XHdcp22_Tx_ConfigTable);
 
-/* Global API's for hdcp key */
 EXPORT_SYMBOL_GPL(XHdcp22Cmn_Sha256Hash);
 EXPORT_SYMBOL_GPL(XHdcp22Cmn_HmacSha256Hash);
 EXPORT_SYMBOL_GPL(XHdcp22Cmn_Aes128Encrypt);
-EXPORT_SYMBOL_GPL(aes256_done);
-EXPORT_SYMBOL_GPL(aes256_init);
-EXPORT_SYMBOL_GPL(aes256_decrypt_ecb);
 
 /* Global API's for xhdcp1x */
 EXPORT_SYMBOL_GPL(XHdcp1x_SetDebugPrintf);
-EXPORT_SYMBOL_GPL(XHdcp1x_SetDebugBufPrintf);
 EXPORT_SYMBOL_GPL(XHdcp1x_SetTopologyUpdate);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_LoadPublicCert);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_LoadLc128);

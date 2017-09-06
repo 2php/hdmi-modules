@@ -162,11 +162,9 @@ u16 XVphy_LogRead(XVphy *InstancePtr)
 
 /*****************************************************************************/
 /**
-* This function will print the entire log to the passed buffer.
+* This function will print the entire log.
 *
 * @param	InstancePtr is a pointer to the XVphy core instance.
-* @param	buff Buffer to print to
-* @param	buff_size size off buff passed
 *
 * @return	number of bytes written to buff.
 *
@@ -184,10 +182,8 @@ int XVphy_LogShow(XVphy *InstancePtr, char *buff, int buff_size)
 	/* Verify argument. */
 	Xil_AssertVoid(InstancePtr != NULL);
 
-	strSize = scnprintf(buff, buff_size,
-			"\r\n\n\nVPHY log\r\n" \
+	strSize = scnprintf(buff, buff_size, "\r\n\n\nVPHY log\r\n" \
 			"------\r\n");
-
 	/* Read log data */
 	Log = XVphy_LogRead(InstancePtr);
 

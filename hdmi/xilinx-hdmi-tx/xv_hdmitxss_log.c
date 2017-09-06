@@ -275,7 +275,7 @@ int XV_HdmiTxSs_LogDisplay(XV_HdmiTxSs *InstancePtr, char *buff, int buff_size)
 			break;
 		default:
 			strSize += scnprintf(buff+strSize, buff_size-strSize,
-					"Unknown event: %i\r\n", Data);
+					"Unknown event: %I\r\n", Data);
 			break;
 		}
 
