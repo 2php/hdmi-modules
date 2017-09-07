@@ -372,6 +372,9 @@ void XV_HdmiTxSS_HdmiTxIntrHandler(XV_HdmiTxSs *InstancePtr);
 int XV_HdmiTxSs_CfgInitialize(XV_HdmiTxSs *InstancePtr,
     XV_HdmiTxSs_Config *CfgPtr,
     UINTPTR EffectiveAddr);
+int XV_HdmiTxSs_CfgInitializeHdcp(XV_HdmiTxSs *InstancePtr,
+    XV_HdmiTxSs_Config *CfgPtr,
+    UINTPTR EffectiveAddr);
 void XV_HdmiTxSs_Start(XV_HdmiTxSs *InstancePtr);
 void XV_HdmiTxSs_Stop(XV_HdmiTxSs *InstancePtr);
 void XV_HdmiTxSs_Reset(XV_HdmiTxSs *InstancePtr);

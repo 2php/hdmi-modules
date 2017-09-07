@@ -464,6 +464,79 @@ int XV_HdmiTxSs_CfgInitialize(XV_HdmiTxSs *InstancePtr,
   return(XST_SUCCESS);
 }
 
+int XV_HdmiTxSs_CfgInitializeHdcp(XV_HdmiTxSs *InstancePtr,
+                              XV_HdmiTxSs_Config *CfgPtr,
+                              UINTPTR EffectiveAddr)
+{
+  XV_HdmiTxSs *HdmiTxSsPtr = InstancePtr;
+
+  /* Verify arguments */
+  Xil_AssertNonvoid(HdmiTxSsPtr != NULL);
+  Xil_AssertNonvoid(CfgPtr != NULL);
+  Xil_AssertNonvoid(EffectiveAddr != (UINTPTR)NULL);
+
+  // HDCP 1.4
+#ifdef XPAR_XHDCP_NUM_INSTANCES
+  if (HdmiTxSsPtr->Hdcp14Ptr) {
+    if (XV_HdmiTxSs_SubcoreInitHdcp14(HdmiTxSsPtr) != XST_SUCCESS){
+      return(XST_FAILURE);
+    }
+  }
+
+  if (HdmiTxSsPtr->HdcpTimerPtr) {
+    if (XV_HdmiTxSs_SubcoreInitHdcpTimer(HdmiTxSsPtr) != XST_SUCCESS){
+      return(XST_FAILURE);
+    }
+  }
+#endif
+
+#ifdef XPAR_XHDCP22_TX_NUM_INSTANCES
+  // HDCP 2.2
+  if (HdmiTxSsPtr->Hdcp22Ptr) {
+    if (XV_HdmiTxSs_SubcoreInitHdcp22(HdmiTxSsPtr) != XST_SUCCESS){
+      return(XST_FAILURE);
+    }
+  }
+#endif
+
+  /* HDCP ready flag */
+
+#ifdef USE_HDCP_TX
+  /* Default value */
+  HdmiTxSsPtr->HdcpIsReady = (FALSE);
+#endif
+
+#if defined(XPAR_XHDCP_NUM_INSTANCES) && defined(XPAR_XHDCP22_TX_NUM_INSTANCES)
+  /* HDCP is ready when both HDCP cores are instantiated and both keys
+     are loaded */
+  if (HdmiTxSsPtr->Hdcp14Ptr && HdmiTxSsPtr->Hdcp22Ptr &&
+      HdmiTxSsPtr->Hdcp22Lc128Ptr && HdmiTxSsPtr->Hdcp22SrmPtr &&
+      HdmiTxSsPtr->Hdcp14KeyPtr) {
+    HdmiTxSsPtr->HdcpIsReady = (TRUE);
+  }
+#endif
+
+#if defined(XPAR_XHDCP_NUM_INSTANCES)
+  /* HDCP is ready when only the HDCP 1.4 core is instantiated and the key
+     is loaded */
+  if (!HdmiTxSsPtr->HdcpIsReady && HdmiTxSsPtr->Hdcp14Ptr &&
+       HdmiTxSsPtr->Hdcp14KeyPtr) {
+    HdmiTxSsPtr->HdcpIsReady = (TRUE);
+  }
+#endif
+
+#if defined(XPAR_XHDCP22_TX_NUM_INSTANCES)
+  /* HDCP is ready when only the HDCP 2.2 core is instantiated and the key
+     is loaded */
+  if (!HdmiTxSsPtr->HdcpIsReady && HdmiTxSsPtr->Hdcp22Ptr &&
+       HdmiTxSsPtr->Hdcp22Lc128Ptr &&
+      HdmiTxSsPtr->Hdcp22SrmPtr) {
+    HdmiTxSsPtr->HdcpIsReady = (TRUE);
+  }
+#endif
+
+  return(XST_SUCCESS);
+}
 /****************************************************************************/
 /**
 * This function starts the HDMI TX subsystem including all sub-cores that are
