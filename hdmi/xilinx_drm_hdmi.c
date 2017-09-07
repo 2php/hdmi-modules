@@ -1480,11 +1480,11 @@ static ssize_t hdcp_log_show(struct device *sysfs_dev, struct device_attribute *
 	return count;
 }
 
-static ssize_t hdcp_enable(struct device *sysfs_dev, struct device_attribute *attr,
+static ssize_t hdcp_authenticate_store(struct device *sysfs_dev, struct device_attribute *attr,
 	const char *buf, size_t count)
 {
 	long int i;
-	printk(KERN_INFO "hdcp_enable()\n");
+	printk(KERN_INFO "hdcp_authenticate_store()\n");
 	XV_HdmiTxSs *HdmiTxSsPtr;
 	struct xilinx_drm_hdmi *xhdmi = (struct xilinx_drm_hdmi *)dev_get_drvdata(sysfs_dev);
 	BUG_ON(!xhdmi);
@@ -1495,9 +1495,87 @@ static ssize_t hdcp_enable(struct device *sysfs_dev, struct device_attribute *at
 		return count;
 	}
 	i = !!i;
-	printk(KERN_INFO "hdcp_enable = %d\n", (int)i);
+	printk(KERN_INFO "hdcp_authenticate = %d\n", (int)i);
+	xhdmi->hdcp_authenticate = i;
+	if (i) {
+		XV_HdmiTxSs_HdcpSetProtocol(HdmiTxSsPtr, XV_HDMITXSS_HDCP_22);
+		XV_HdmiTxSs_HdcpAuthRequest(HdmiTxSsPtr);
+	}
 	return count;
 }
+
+static ssize_t hdcp_encrypt_store(struct device *sysfs_dev, struct device_attribute *attr,
+	const char *buf, size_t count)
+{
+	long int i;
+	printk(KERN_INFO "hdcp_encrypt_store()\n");
+	XV_HdmiTxSs *HdmiTxSsPtr;
+	struct xilinx_drm_hdmi *xhdmi = (struct xilinx_drm_hdmi *)dev_get_drvdata(sysfs_dev);
+	BUG_ON(!xhdmi);
+	HdmiTxSsPtr = (XV_HdmiTxSs *)&xhdmi->xv_hdmitxss;
+	BUG_ON(!HdmiTxSsPtr);
+	if (kstrtol(buf, 10, &i)) {
+		printk(KERN_INFO "************ failed to convert buf to long\n");
+		return count;
+	}
+	i = !!i;
+	printk(KERN_INFO "hdcp_encrypt = %d\n", (int)i);
+	xhdmi->hdcp_encrypt = i;
+	return count;
+}
+
+static ssize_t hdcp_authenticate_show(struct device *sysfs_dev, struct device_attribute *attr,
+	char *buf)
+{
+	ssize_t count;
+	XV_HdmiTxSs *HdmiTxSsPtr;
+	struct xilinx_drm_hdmi *xhdmi = (struct xilinx_drm_hdmi *)dev_get_drvdata(sysfs_dev);
+	BUG_ON(!xhdmi);
+	HdmiTxSsPtr = (XV_HdmiTxSs *)&xhdmi->xv_hdmitxss;
+	BUG_ON(!HdmiTxSsPtr);
+	count = scnprintf(buf, PAGE_SIZE, "%d", xhdmi->hdcp_authenticate);
+	return count;
+}
+
+static ssize_t hdcp_encrypt_show(struct device *sysfs_dev, struct device_attribute *attr,
+	char *buf)
+{
+	ssize_t count;
+	XV_HdmiTxSs *HdmiTxSsPtr;
+	struct xilinx_drm_hdmi *xhdmi = (struct xilinx_drm_hdmi *)dev_get_drvdata(sysfs_dev);
+	BUG_ON(!xhdmi);
+	HdmiTxSsPtr = (XV_HdmiTxSs *)&xhdmi->xv_hdmitxss;
+	BUG_ON(!HdmiTxSsPtr);
+	count = scnprintf(buf, PAGE_SIZE, "%d", xhdmi->hdcp_encrypt);
+	return count;
+}
+
+static ssize_t hdcp_authenticated_show(struct device *sysfs_dev, struct device_attribute *attr,
+	char *buf)
+{
+	ssize_t count;
+	XV_HdmiTxSs *HdmiTxSsPtr;
+	struct xilinx_drm_hdmi *xhdmi = (struct xilinx_drm_hdmi *)dev_get_drvdata(sysfs_dev);
+	BUG_ON(!xhdmi);
+	HdmiTxSsPtr = (XV_HdmiTxSs *)&xhdmi->xv_hdmitxss;
+	BUG_ON(!HdmiTxSsPtr);
+	count = scnprintf(buf, PAGE_SIZE, "%d", xhdmi->hdcp_authenticated);
+	return count;
+}
+
+static ssize_t hdcp_encrypted_show(struct device *sysfs_dev, struct device_attribute *attr,
+	char *buf)
+{
+	ssize_t count;
+	XV_HdmiTxSs *HdmiTxSsPtr;
+	struct xilinx_drm_hdmi *xhdmi = (struct xilinx_drm_hdmi *)dev_get_drvdata(sysfs_dev);
+	BUG_ON(!xhdmi);
+	HdmiTxSsPtr = (XV_HdmiTxSs *)&xhdmi->xv_hdmitxss;
+	BUG_ON(!HdmiTxSsPtr);
+	count = scnprintf(buf, PAGE_SIZE, "%d", xhdmi->hdcp_encrypted);
+	return count;
+}
+
 
 /* This function decrypts the HDCP keys, uses aes256.c */
 
@@ -1534,39 +1612,16 @@ static void Decrypt(const u8 *CipherBufferPtr/*src*/, u8 *PlainBufferPtr/*dst*/,
 	u8 *AesBufferPtr;
 	u16 AesLength;
 	aes256_context ctx;
-
-	// Copy cipher into plain buffer // @NOTE: Added
 	memcpy(PlainBufferPtr, CipherBufferPtr, Length);
-
-	// Assign local Pointer // @NOTE: Changed
 	AesBufferPtr = PlainBufferPtr;
-
-	// Initialize AES256
 	aes256_init(&ctx, Key);
-
-	AesLength = Length/16;
-	if (Length % 16) {
-		AesLength++;
-	}
-
-	for (i=0; i<AesLength; i++)
+	AesLength = (Length + 15) / 16;
+	for (i=0; i < AesLength; i++)
 	{
-		// Decrypt
 		aes256_decrypt_ecb(&ctx, AesBufferPtr);
-
-		// Increment pointer
-		AesBufferPtr += 16;	// The aes always encrypts 16 bytes
+		AesBufferPtr += 16;
 	}
-
-	// Done
 	aes256_done(&ctx);
-
-#if 0  // @NOTE: Removed
-	// Clear Buffer
-	memset(PlainBufferPtr, 0x00, Length);
-	// Copy buffers
-	memcpy(PlainBufferPtr, CipherBufferPtr, Length);
-#endif
 }
 
 #define SIGNATURE_OFFSET			0
@@ -1691,10 +1746,18 @@ static ssize_t hdcp_password_store(struct device *sysfs_dev, struct device_attri
 }
 
 DEVICE_ATTR(vphy_log, 0444, vphy_log_show, vphy_log_store);
-DEVICE_ATTR(hdmi_log, 0444, hdmi_log_show, NULL/*null_store*/);
-DEVICE_ATTR(hdcp_log, 0444, hdcp_log_show, NULL/*null_store*/);
-DEVICE_ATTR(hdcp_key, 0220, NULL/*null_show*/, hdcp_key_store);
-DEVICE_ATTR(hdcp_password, 0220, NULL/*null_show*/, hdcp_password_store);
+DEVICE_ATTR(hdmi_log, 0444, hdmi_log_show, NULL/*store*/);
+DEVICE_ATTR(hdcp_log, 0444, hdcp_log_show, NULL/*store*/);
+DEVICE_ATTR(hdcp_key, 0220, NULL/*show*/, hdcp_key_store);
+DEVICE_ATTR(hdcp_password, 0220, NULL/*show*/, hdcp_password_store);
+
+/* readable and writable controls */
+DEVICE_ATTR(hdcp_authenticate, 0664, hdcp_authenticate_show, hdcp_authenticate_store);
+DEVICE_ATTR(hdcp_encrypt, 0664, hdcp_encrypt_show, hdcp_encrypt_store);
+/* read-only status */
+DEVICE_ATTR(hdcp_authenticated, 0444, hdcp_authenticated_show, NULL/*store*/);
+DEVICE_ATTR(hdcp_encrypted, 0444, hdcp_encrypted_show, NULL/*store*/);
+
 
 static struct attribute *attrs[] = {
 	&dev_attr_vphy_log.attr,
@@ -1702,6 +1765,10 @@ static struct attribute *attrs[] = {
 	&dev_attr_hdcp_log.attr,
 	&dev_attr_hdcp_key.attr,
 	&dev_attr_hdcp_password.attr,
+	&dev_attr_hdcp_authenticate.attr,
+	&dev_attr_hdcp_encrypt.attr,
+	&dev_attr_hdcp_authenticated.attr,
+	&dev_attr_hdcp_encrypted.attr,
 	NULL,
 };
 

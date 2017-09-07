@@ -163,7 +163,7 @@ u16 XV_HdmiTxSs_LogRead(XV_HdmiTxSs *InstancePtr)
 * @note		None.
 *
 ******************************************************************************/
-int XV_HdmiTxSs_LogDisplay(XV_HdmiTxSs *InstancePtr, char *buff, int buff_size)
+int XV_HdmiTxSs_LogShow(XV_HdmiTxSs *InstancePtr, char *buff, int buff_size)
 {
 	int strSize = -1;
 #ifdef XV_HDMITXSS_LOG_ENABLE
