@@ -532,6 +532,92 @@ int XV_HdmiRxSs_CfgInitialize(XV_HdmiRxSs *InstancePtr,
   return(XST_SUCCESS);
 }
 
+int XV_HdmiRxSs_CfgInitializeHdcp(XV_HdmiRxSs *InstancePtr,
+    XV_HdmiRxSs_Config *CfgPtr,
+    UINTPTR EffectiveAddr)
+{
+  XV_HdmiRxSs *HdmiRxSsPtr = InstancePtr;
+
+  /* Verify arguments */
+  Xil_AssertNonvoid(HdmiRxSsPtr != NULL);
+  Xil_AssertNonvoid(CfgPtr != NULL);
+  Xil_AssertNonvoid(EffectiveAddr != (UINTPTR)NULL);
+
+#ifdef XPAR_XHDCP_NUM_INSTANCES
+  // HDCP 1.4
+  if(HdmiRxSsPtr->Hdcp14Ptr)
+  {
+    if(XV_HdmiRxSs_SubcoreInitHdcp14(HdmiRxSsPtr) != XST_SUCCESS)
+    {
+      return(XST_FAILURE);
+    }
+  }
+
+  if(HdmiRxSsPtr->HdcpTimerPtr)
+  {
+    if(XV_HdmiRxSs_SubcoreInitHdcpTimer(HdmiRxSsPtr) != XST_SUCCESS)
+    {
+      return(XST_FAILURE);
+    }
+  }
+#endif
+
+#ifdef XPAR_XHDCP22_RX_NUM_INSTANCES
+  // HDCP 2.2
+  if(HdmiRxSsPtr->Hdcp22Ptr)
+  {
+    if(XV_HdmiRxSs_SubcoreInitHdcp22(HdmiRxSsPtr) != XST_SUCCESS)
+    {
+      return(XST_FAILURE);
+    }
+  }
+#endif
+
+#ifdef USE_HDCP_RX
+  /* Default value */
+  HdmiRxSsPtr->HdcpIsReady = (FALSE);
+#endif
+
+#if defined(XPAR_XHDCP_NUM_INSTANCES) && defined(XPAR_XHDCP22_RX_NUM_INSTANCES)
+  /* HDCP is ready when both HDCP cores are instantiated and all keys are
+     loaded */
+  if (HdmiRxSsPtr->Hdcp14Ptr && HdmiRxSsPtr->Hdcp22Ptr &&
+      HdmiRxSsPtr->Hdcp22Lc128Ptr && HdmiRxSsPtr->Hdcp14KeyPtr &&
+      HdmiRxSsPtr->Hdcp22PrivateKeyPtr) {
+    HdmiRxSsPtr->HdcpIsReady = (TRUE);
+
+    /* Set default HDCP content protection scheme */
+    XV_HdmiRxSs_HdcpSetProtocol(HdmiRxSsPtr, XV_HDMIRXSS_HDCP_14);
+  }
+#endif
+
+#if defined(XPAR_XHDCP_NUM_INSTANCES)
+  /* HDCP is ready when only the HDCP 1.4 core is instantiated and the key is
+     loaded */
+  if (!HdmiRxSsPtr->HdcpIsReady && HdmiRxSsPtr->Hdcp14Ptr &&
+       HdmiRxSsPtr->Hdcp14KeyPtr) {
+    HdmiRxSsPtr->HdcpIsReady = (TRUE);
+
+    /* Set default HDCP content protection scheme */
+    XV_HdmiRxSs_HdcpSetProtocol(HdmiRxSsPtr, XV_HDMIRXSS_HDCP_14);
+  }
+#endif
+
+#if defined(XPAR_XHDCP22_RX_NUM_INSTANCES)
+  /* HDCP is ready when only the HDCP 2.2 core is instantiated and the keys are
+     loaded */
+  if (!HdmiRxSsPtr->HdcpIsReady && HdmiRxSsPtr->Hdcp22Ptr &&
+       HdmiRxSsPtr->Hdcp22Lc128Ptr && HdmiRxSsPtr->Hdcp22PrivateKeyPtr) {
+    HdmiRxSsPtr->HdcpIsReady = (TRUE);
+
+    /* Set default HDCP content protection scheme */
+    XV_HdmiRxSs_HdcpSetProtocol(HdmiRxSsPtr, XV_HDMIRXSS_HDCP_22);
+  }
+#endif
+
+  return(XST_SUCCESS);
+}
+
 /****************************************************************************/
 /**
 * This function starts the HDMI RX subsystem including all sub-cores that are

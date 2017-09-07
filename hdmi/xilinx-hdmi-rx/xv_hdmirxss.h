@@ -394,6 +394,9 @@ void XV_HdmiRxSS_HdmiRxIntrHandler(XV_HdmiRxSs *InstancePtr);
 int XV_HdmiRxSs_CfgInitialize(XV_HdmiRxSs *InstancePtr,
     XV_HdmiRxSs_Config *CfgPtr,
     UINTPTR EffectiveAddr);
+int XV_HdmiRxSs_CfgInitializeHdcp(XV_HdmiRxSs *InstancePtr,
+    XV_HdmiRxSs_Config *CfgPtr,
+    UINTPTR EffectiveAddr);
 void XV_HdmiRxSs_Start(XV_HdmiRxSs *InstancePtr);
 void XV_HdmiRxSs_Stop(XV_HdmiRxSs *InstancePtr);
 void XV_HdmiRxSs_Reset(XV_HdmiRxSs *InstancePtr);
