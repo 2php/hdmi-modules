@@ -1488,6 +1488,14 @@ static ssize_t hdcp_key_store(struct device *sysfs_dev, struct device_attribute 
 
 		/* configure the keys in the IP */
 		hdcp_keys_configure(xhdmi);
+
+		/* configure HDCP in HDMI */
+		u8 Status = XV_HdmiRxSs_CfgInitializeHdcp(HdmiRxSsPtr, &xhdmi->config, (uintptr_t)xhdmi->iomem);
+		if (Status != XST_SUCCESS)
+		{
+			dev_err(xhdmi->dev, "XV_HdmiRxSs_CfgInitialize() failed with error %d\n", Status);
+			return -EINVAL;
+		}
 	}
 	return count;
 }

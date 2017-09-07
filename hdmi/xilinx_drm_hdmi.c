@@ -913,10 +913,13 @@ xilinx_drm_hdmi_detect(struct drm_encoder *encoder,
 		msleep(1);
 		first_time_ms--;
 	}
-	if (first_time_ms)
-	/* after first time, report immediately */
-	first_time_ms = 0;
+	/* connected in less than 50 ms? */
+	if (first_time_ms) {
+		/* do not wait during further connect detects */
+		first_time_ms = 0;
+		/* after first time, report immediately */
 		hdmi_dbg("xilinx_drm_hdmi_detect() waited %d ms until connect.\n", 50 - first_time_ms);
+	}
 	hdmi_mutex_lock(&xhdmi->hdmi_mutex);
 	/* cable connected  */
 	if (xhdmi->cable_connected) {
@@ -1484,6 +1487,7 @@ static ssize_t hdcp_authenticate_store(struct device *sysfs_dev, struct device_a
 	const char *buf, size_t count)
 {
 	long int i;
+	u8 Status;
 	printk(KERN_INFO "hdcp_authenticate_store()\n");
 	XV_HdmiTxSs *HdmiTxSsPtr;
 	struct xilinx_drm_hdmi *xhdmi = (struct xilinx_drm_hdmi *)dev_get_drvdata(sysfs_dev);
@@ -1497,7 +1501,7 @@ static ssize_t hdcp_authenticate_store(struct device *sysfs_dev, struct device_a
 	i = !!i;
 	printk(KERN_INFO "hdcp_authenticate = %d\n", (int)i);
 	xhdmi->hdcp_authenticate = i;
-	if (i) {
+	if (i && XV_HdmiTxSs_HdcpIsReady(HdmiTxSsPtr)) {
 		XV_HdmiTxSs_HdcpSetProtocol(HdmiTxSsPtr, XV_HDMITXSS_HDCP_22);
 		XV_HdmiTxSs_HdcpAuthRequest(HdmiTxSsPtr);
 	}
@@ -1716,6 +1720,22 @@ static ssize_t hdcp_key_store(struct device *sysfs_dev, struct device_attribute 
 
 		/* configure the keys in the IP */
 		hdcp_keys_configure(xhdmi);
+
+
+		XV_HdmiTxSs_SetCallback(HdmiTxSsPtr, XV_HDMITXSS_HANDLER_HDCP_AUTHENTICATED,
+			TxHdcpAuthenticatedCallback, (void *)xhdmi);
+		XV_HdmiTxSs_SetCallback(HdmiTxSsPtr, XV_HDMITXSS_HANDLER_HDCP_UNAUTHENTICATED,
+			TxHdcpUnauthenticatedCallback, (void *)xhdmi);
+
+
+		/* configure HDCP in HDMI */
+		u8 Status = XV_HdmiTxSs_CfgInitializeHdcp(HdmiTxSsPtr, &xhdmi->config, (uintptr_t)xhdmi->iomem);
+		if (Status != XST_SUCCESS)
+		{
+			dev_err(xhdmi->dev, "XV_HdmiTxSs_CfgInitialize() failed with error %d\n", Status);
+			return -EINVAL;
+		}
+
 	}
 	return count;
 }
@@ -1813,6 +1833,7 @@ static int xilinx_drm_hdmi_parse_of(struct xilinx_drm_hdmi *xhdmi, XV_HdmiTxSs_C
 	isHdcp22_en = of_property_read_bool(node, "xlnx,include-hdcp-2-2");
 
 	if (isHdcp14_en) {
+		printk(KERN_INFO "isHdcp14_en\n");
 		/* HDCP14 Core */
 		/* make subcomponent of TXSS present */
 		config->Hdcp14.IsPresent = 1;
