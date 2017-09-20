@@ -105,6 +105,10 @@ struct xhdmi_device {
 	int hdcp1x_timer_irq;
 	int hdcp22_irq;
 	int hdcp22_timer_irq;
+	/* status */
+	bool hdcp_authenticated;
+	bool hdcp_encrypted;
+	bool hdcp_password_accepted;
 	/* delayed work to drive HDCP poll */
 	struct delayed_work delayed_work_hdcp_poll;
 #ifdef DEBUG
@@ -739,6 +743,7 @@ static void RxStreamDownCallback(void *CallbackRef)
 	(void)HdmiRxSsPtr;
 	hdmi_dbg("RxStreamDownCallback()\n");
 	xhdmi->hdmi_stream_is_up = 0;
+	xhdmi->hdcp_authenticated = 0;
 }
 
 static void RxStreamInitCallback(void *CallbackRef)
@@ -964,6 +969,7 @@ static void RxHdcpAuthenticatedCallback(void *CallbackRef)
 	HdmiRxSsPtr = &xhdmi->xv_hdmirxss;
 	BUG_ON(!HdmiRxSsPtr);
 	HdcpProtocol = XV_HdmiRxSs_HdcpGetProtocol(HdmiRxSsPtr);
+	xhdmi->hdcp_authenticated = 1;
 	switch (HdcpProtocol) {
 	case XV_HDMIRXSS_HDCP_22:
 		hdmi_dbg("HDCP 2.2 RX authenticated.\n");
@@ -980,6 +986,7 @@ static void RxHdcpUnauthenticatedCallback(void *CallbackRef)
 	BUG_ON(!xhdmi);
 	XV_HdmiRxSs *HdmiRxSsPtr = &xhdmi->xv_hdmirxss;
 	BUG_ON(!HdmiRxSsPtr);
+	xhdmi->hdcp_authenticated = 0;
 	hdmi_dbg("HDCP RX unauthenticated.\n");
 }
 
@@ -989,9 +996,9 @@ static void RxHdcpEncryptionUpdateCallback(void *CallbackRef)
 	BUG_ON(!xhdmi);
 	XV_HdmiRxSs *HdmiRxSsPtr = &xhdmi->xv_hdmirxss;
 	BUG_ON(!HdmiRxSsPtr);
-	hdmi_dbg("HDCP RX encryption changed.\n");
+	xhdmi->hdcp_encrypted = !!XV_HdmiRxSs_HdcpIsEncrypted(HdmiRxSsPtr);
+	hdmi_dbg("HDCP RX encryption changed; now %s.\n", xhdmi->hdcp_encrypted? "enabled": "disabled");
 }
-
 
 /* this function is responsible for periodically calling XV_HdmiRxSs_HdcpPoll() */
 static void hdcp_poll_work(struct work_struct *work)
@@ -1313,8 +1320,8 @@ static ssize_t hdcp_enable(struct device *sysfs_dev, struct device_attribute *at
 	printk(KERN_INFO "hdcp_enable()\n");
 	XV_HdmiRxSs *HdmiRxSsPtr;
 	struct xhdmi_device *xhdmi = (struct xhdmi_device *)dev_get_drvdata(sysfs_dev);
-	HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
 	BUG_ON(!xhdmi);
+	HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
 	BUG_ON(!HdmiRxSsPtr);
 	if (kstrtol(buf, 10, &i)) {
 		printk(KERN_INFO "************ failed to convert buf to long\n");
@@ -1322,6 +1329,32 @@ static ssize_t hdcp_enable(struct device *sysfs_dev, struct device_attribute *at
 	}
 	i = !!i;
 	printk(KERN_INFO "hdcp_enable = %d\n", (int)i);
+	return count;
+}
+
+static ssize_t hdcp_authenticated_show(struct device *sysfs_dev, struct device_attribute *attr,
+	char *buf)
+{
+	ssize_t count;
+	XV_HdmiRxSs *HdmiRxSsPtr;
+	struct xhdmi_device *xhdmi = (struct xhdmi_device *)dev_get_drvdata(sysfs_dev);
+	BUG_ON(!xhdmi);
+	HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
+	BUG_ON(!HdmiRxSsPtr);
+	count = scnprintf(buf, PAGE_SIZE, "%d", xhdmi->hdcp_authenticated);
+	return count;
+}
+
+static ssize_t hdcp_encrypted_show(struct device *sysfs_dev, struct device_attribute *attr,
+	char *buf)
+{
+	ssize_t count;
+	XV_HdmiRxSs *HdmiRxSsPtr;
+	struct xhdmi_device *xhdmi = (struct xhdmi_device *)dev_get_drvdata(sysfs_dev);
+	BUG_ON(!xhdmi);
+	HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
+	BUG_ON(!HdmiRxSsPtr);
+	count = scnprintf(buf, PAGE_SIZE, "%d", xhdmi->hdcp_encrypted);
 	return count;
 }
 
@@ -1479,6 +1512,7 @@ static ssize_t hdcp_key_store(struct device *sysfs_dev, struct device_attribute 
 		printk(KERN_INFO "hdcp_key_store(count = %d, expected >=1872)\n", (int)count);
 		return -EINVAL;
 	}
+	xhdmi->hdcp_password_accepted = 0;
 	/* decrypt the keys from the binary blob (buffer) into the C structures for keys */
 	if (XHdcp_LoadKeys(buf, xhdmi->hdcp_password,
 		xhdmi->Hdcp22Lc128, sizeof(xhdmi->Hdcp22Lc128),
@@ -1486,6 +1520,7 @@ static ssize_t hdcp_key_store(struct device *sysfs_dev, struct device_attribute 
 		xhdmi->Hdcp14KeyA, sizeof(xhdmi->Hdcp14KeyA),
 		xhdmi->Hdcp14KeyB, sizeof(xhdmi->Hdcp14KeyB)) == XST_SUCCESS) {
 
+		xhdmi->hdcp_password_accepted = 1;
 		/* configure the keys in the IP */
 		hdcp_keys_configure(xhdmi);
 
@@ -1496,7 +1531,27 @@ static ssize_t hdcp_key_store(struct device *sysfs_dev, struct device_attribute 
 			dev_err(xhdmi->dev, "XV_HdmiRxSs_CfgInitialize() failed with error %d\n", Status);
 			return -EINVAL;
 		}
+
+		XV_HdmiRxSs_SetCallback(HdmiRxSsPtr, XV_HDMIRXSS_HANDLER_HDCP_AUTHENTICATED,
+			RxHdcpAuthenticatedCallback, (void *)xhdmi);
+		XV_HdmiRxSs_SetCallback(HdmiRxSsPtr, XV_HDMIRXSS_HANDLER_HDCP_UNAUTHENTICATED,
+			RxHdcpUnauthenticatedCallback, (void *)xhdmi);
+		XV_HdmiRxSs_SetCallback(HdmiRxSsPtr, XV_HDMIRXSS_HANDLER_HDCP_ENCRYPTION_UPDATE,
+			RxHdcpEncryptionUpdateCallback, (void *)xhdmi);
 	}
+	return count;
+}
+
+static ssize_t hdcp_password_show(struct device *sysfs_dev, struct device_attribute *attr,
+	char *buf)
+{
+	ssize_t count;
+	XV_HdmiRxSs *HdmiRxSsPtr;
+	struct xhdmi_device *xhdmi = (struct xhdmi_device *)dev_get_drvdata(sysfs_dev);
+	BUG_ON(!xhdmi);
+	HdmiRxSsPtr = (XV_HdmiRxSs *)&xhdmi->xv_hdmirxss;
+	BUG_ON(!HdmiRxSsPtr);
+	count = scnprintf(buf, PAGE_SIZE, "%s", xhdmi->hdcp_password_accepted? "accepted": "rejected");
 	return count;
 }
 
@@ -1513,7 +1568,7 @@ static ssize_t hdcp_password_store(struct device *sysfs_dev, struct device_attri
 	/* copy password characters up to newline or carriage return */
 	while ((i < count) && (i < sizeof(xhdmi->hdcp_password))) {
 		/* do not include newline or carriage return in password */
-		if ((buf[i] == '\n') || (buf[i] == '\r')) break;
+		if ((buf[i] == '\n') || (buf[i] == '\r') || (buf[i] == 0)) break;
 		xhdmi->hdcp_password[i] = buf[i];
 		i++;
 	}
@@ -1537,7 +1592,10 @@ DEVICE_ATTR(vphy_log, 0444, vphy_log_show, vphy_log_store);
 DEVICE_ATTR(hdmi_log, 0444, hdmi_log_show, NULL/*null_store*/);
 DEVICE_ATTR(hdcp_log, 0444, hdcp_log_show, NULL/*null_store*/);
 DEVICE_ATTR(hdcp_key, 0220, NULL/*null_show*/, hdcp_key_store);
-DEVICE_ATTR(hdcp_password, 0220, NULL/*null_show*/, hdcp_password_store);
+DEVICE_ATTR(hdcp_password, 0660, hdcp_password_show, hdcp_password_store);
+/* read-only status */
+DEVICE_ATTR(hdcp_authenticated, 0444, hdcp_authenticated_show, NULL/*store*/);
+DEVICE_ATTR(hdcp_encrypted, 0444, hdcp_encrypted_show, NULL/*store*/);
 
 static struct attribute *attrs[] = {
 	&dev_attr_vphy_log.attr,
@@ -1545,6 +1603,8 @@ static struct attribute *attrs[] = {
 	&dev_attr_hdcp_log.attr,
 	&dev_attr_hdcp_key.attr,
 	&dev_attr_hdcp_password.attr,
+	&dev_attr_hdcp_authenticated.attr,
+	&dev_attr_hdcp_encrypted.attr,
 	NULL,
 };
 

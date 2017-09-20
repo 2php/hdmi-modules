@@ -1208,7 +1208,7 @@ void XV_HdmiRxSs_HdcpSetKey(XV_HdmiRxSs *InstancePtr, XV_HdmiRxSs_HdcpKeyType Ke
 ******************************************************************************/
 int XV_HdmiRxSs_HdcpInfo(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
 {
-  int strSize = -1;
+  int strSize = 0;
   /* Verify argument. */
   Xil_AssertVoid(InstancePtr != NULL);
 

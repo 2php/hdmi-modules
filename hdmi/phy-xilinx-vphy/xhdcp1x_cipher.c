@@ -43,7 +43,6 @@
 #include "xhdcp1x_cipher.h"
 #include "xil_assert.h"
 #include "xil_types.h"
-#include "xil_printf.h"
 #include "xhdcp1x_debug.h"
 
 /************************** Constant Definitions *****************************/
@@ -156,8 +155,6 @@ int XHdcp1x_CipherIsLinkUp(const XHdcp1x *InstancePtr)
 int XHdcp1x_CipherEnable(XHdcp1x *InstancePtr)
 {
 	u32 Value = 0;
-	xil_printf("XHdcp1x *InstancePtr = 0x%08lx\n", InstancePtr);
-	xil_printf("XHdcp1x *InstancePtr->Config.BaseAddress = 0x%08lx\n", InstancePtr->Config.BaseAddress);
 
 	/* Verify arguments. */
 	Xil_AssertNonvoid(InstancePtr != NULL);

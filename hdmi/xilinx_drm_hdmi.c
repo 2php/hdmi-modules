@@ -130,6 +130,9 @@ struct xilinx_drm_hdmi {
 	/* status */
 	bool hdcp_authenticated;
 	bool hdcp_encrypted;
+
+	bool hdcp_password_accepted;
+
 	/* delayed work to drive HDCP poll */
 	struct delayed_work delayed_work_hdcp_poll;
 #ifdef DEBUG
@@ -373,7 +376,7 @@ static irqreturn_t hdmitx_hdcp_irq_thread(int irq, void *dev_id)
 static void XHdcp_Authenticate(XV_HdmiTxSs *HdmiTxSsPtr)
 {
 	u32 Status;
-	hdmi_dbg("XHdcp_Authenticate()\n");
+	//hdmi_dbg("XHdcp_Authenticate()\n");
 
 	if (XV_HdmiTxSs_IsStreamUp(HdmiTxSsPtr)) {
 		if (!(XV_HdmiTxSs_HdcpIsAuthenticated(HdmiTxSsPtr)) &&
@@ -493,7 +496,7 @@ static void TxStreamUpCallback(void *CallbackRef)
 #endif
 	if (xhdmi->hdcp_authenticate) {
 		XHdcp_Authenticate(HdmiTxSsPtr);
-		hdmi_dbg("TxStreamUpCallback(): TX XHdcp_Authenticate\n");
+		//hdmi_dbg("TxStreamUpCallback(): TX XHdcp_Authenticate\n");
 	}
 	hdmi_dbg("TxStreamUpCallback(): done\n");
 }
@@ -554,6 +557,7 @@ void TxHdcpUnauthenticatedCallback(void *CallbackRef)
 	BUG_ON(!HdmiTxSsPtr);
 
 	xhdmi->hdcp_authenticated = 0;
+	xhdmi->hdcp_encrypted = 0;
 }
 
 static void TxVsCallback(void *CallbackRef)
@@ -1173,12 +1177,14 @@ static void hdcp_poll_work(struct work_struct *work)
 	}
 	hdmi_mutex_unlock(&xhdmi->hdmi_mutex);
 
+#if 0
 #ifdef DEBUG
 	xhdmi->hdcp_info_counter++;
 	if (xhdmi->hdcp_info_counter >= 5000) { //every 5sec
 		xhdmi->hdcp_info_counter = 0;
 		schedule_delayed_work(&xhdmi->delayed_work_hdcp_info, 0);
 	}
+#endif
 #endif
 
 	/* reschedule this work again in 1 millisecond */
@@ -1711,6 +1717,7 @@ static ssize_t hdcp_key_store(struct device *sysfs_dev, struct device_attribute 
 		printk(KERN_INFO "hdcp_key_store(count = %d, expected >=1872)\n", (int)count);
 		return -EINVAL;
 	}
+	xhdmi->hdcp_password_accepted = 0;
 	/* decrypt the keys from the binary blob (buffer) into the C structures for keys */
 	if (XHdcp_LoadKeys(buf, xhdmi->hdcp_password,
 		xhdmi->Hdcp22Lc128, sizeof(xhdmi->Hdcp22Lc128),
@@ -1718,15 +1725,10 @@ static ssize_t hdcp_key_store(struct device *sysfs_dev, struct device_attribute 
 		xhdmi->Hdcp14KeyA, sizeof(xhdmi->Hdcp14KeyA),
 		xhdmi->Hdcp14KeyB, sizeof(xhdmi->Hdcp14KeyB)) == XST_SUCCESS) {
 
+		xhdmi->hdcp_password_accepted = 1;
+
 		/* configure the keys in the IP */
 		hdcp_keys_configure(xhdmi);
-
-
-		XV_HdmiTxSs_SetCallback(HdmiTxSsPtr, XV_HDMITXSS_HANDLER_HDCP_AUTHENTICATED,
-			TxHdcpAuthenticatedCallback, (void *)xhdmi);
-		XV_HdmiTxSs_SetCallback(HdmiTxSsPtr, XV_HDMITXSS_HANDLER_HDCP_UNAUTHENTICATED,
-			TxHdcpUnauthenticatedCallback, (void *)xhdmi);
-
 
 		/* configure HDCP in HDMI */
 		u8 Status = XV_HdmiTxSs_CfgInitializeHdcp(HdmiTxSsPtr, &xhdmi->config, (uintptr_t)xhdmi->iomem);
@@ -1735,8 +1737,24 @@ static ssize_t hdcp_key_store(struct device *sysfs_dev, struct device_attribute 
 			dev_err(xhdmi->dev, "XV_HdmiTxSs_CfgInitialize() failed with error %d\n", Status);
 			return -EINVAL;
 		}
-
+		XV_HdmiTxSs_SetCallback(HdmiTxSsPtr, XV_HDMITXSS_HANDLER_HDCP_AUTHENTICATED,
+			TxHdcpAuthenticatedCallback, (void *)xhdmi);
+		XV_HdmiTxSs_SetCallback(HdmiTxSsPtr, XV_HDMITXSS_HANDLER_HDCP_UNAUTHENTICATED,
+			TxHdcpUnauthenticatedCallback, (void *)xhdmi);
 	}
+	return count;
+}
+
+static ssize_t hdcp_password_show(struct device *sysfs_dev, struct device_attribute *attr,
+	char *buf)
+{
+	ssize_t count;
+	XV_HdmiTxSs *HdmiTxSsPtr;
+	struct xilinx_drm_hdmi *xhdmi = (struct xilinx_drm_hdmi *)dev_get_drvdata(sysfs_dev);
+	BUG_ON(!xhdmi);
+	HdmiTxSsPtr = (XV_HdmiTxSs *)&xhdmi->xv_hdmitxss;
+	BUG_ON(!HdmiTxSsPtr);
+	count = scnprintf(buf, PAGE_SIZE, "%s", xhdmi->hdcp_password_accepted? "accepted": "rejected");
 	return count;
 }
 
@@ -1769,7 +1787,7 @@ DEVICE_ATTR(vphy_log, 0444, vphy_log_show, vphy_log_store);
 DEVICE_ATTR(hdmi_log, 0444, hdmi_log_show, NULL/*store*/);
 DEVICE_ATTR(hdcp_log, 0444, hdcp_log_show, NULL/*store*/);
 DEVICE_ATTR(hdcp_key, 0220, NULL/*show*/, hdcp_key_store);
-DEVICE_ATTR(hdcp_password, 0220, NULL/*show*/, hdcp_password_store);
+DEVICE_ATTR(hdcp_password, 0660, hdcp_password_show, hdcp_password_store);
 
 /* readable and writable controls */
 DEVICE_ATTR(hdcp_authenticate, 0664, hdcp_authenticate_show, hdcp_authenticate_store);

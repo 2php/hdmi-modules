@@ -1508,7 +1508,7 @@ void XV_HdmiTxSs_HdcpSetKey(XV_HdmiTxSs *InstancePtr,
 ******************************************************************************/
 int XV_HdmiTxSs_HdcpInfo(XV_HdmiTxSs *InstancePtr, char *buff, int buff_size)
 {
-  int strSize = -1;
+  int strSize = 0;
   /* Verify argument. */
   Xil_AssertVoid(InstancePtr != NULL);
 
@@ -1526,7 +1526,7 @@ int XV_HdmiTxSs_HdcpInfo(XV_HdmiTxSs *InstancePtr, char *buff, int buff_size)
           strSize = scnprintf(buff+strSize, buff_size-strSize,
               "\r\nHDCP 1.4 TX Info\r\n");
 
-          XHdcp1x_SetDebugBufPrintf(buff,buff_size, &strSize);
+          XHdcp1x_SetDebugBufPrintf(buff, buff_size, &strSize/*offset in buffer*/);
           XHdcp1x_Info(InstancePtr->Hdcp14Ptr);
           XHdcp1x_SetDebugBufPrintf(NULL,0, NULL);
           // Route debug output to xil_printf
