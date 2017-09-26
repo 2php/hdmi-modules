@@ -3908,13 +3908,16 @@ XHdcp22_Rx_LogItem* XHdcp22Rx_LogRd(XHdcp22_Rx *InstancePtr)
 * This function prints the contents of the log buffer.
 *
 * @param	InstancePtr is a pointer to the XHdcp22_Rx core instance.
+* @param	buff is a pointer to the buffer to write to.
+* @param	buff_size is the size of the passed buffer
 *
-* @return	None.
+* @return	Number of characters printed to the buffer.
 *
 * @note		None.
 ******************************************************************************/
-void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
+int XHdcp22Rx_LogShow(XHdcp22_Rx *InstancePtr, char *buff, int buff_size)
 {
+	int strSize = 0;
 	XHdcp22_Rx_LogItem* LogPtr;
 	char str[255];
 	u32 TimeStampPrev = 0;
@@ -3922,8 +3925,10 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 	/* Verify argument. */
 	Xil_AssertVoid(InstancePtr != NULL);
 
-	xil_printf("\r\n-------HDCP22 RX log start-------\r\n");
-	xil_printf("[Time(us):Delta(us)] <Event>\n\r");
+	strSize = scnprintf(buff+strSize, buff_size-strSize,
+			"\r\n-------HDCP22 RX log start-------\r\n");
+	strSize += scnprintf(buff+strSize, buff_size-strSize,
+			"[Time(us):Delta(us)] <Event>\n\r");
 	strcpy(str, "UNDEFINED");
 	do {
 		/* Read log data */
@@ -3933,15 +3938,18 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 		if(LogPtr->LogEvent != XHDCP22_RX_LOG_EVT_NONE)
 		{
 			if(LogPtr->TimeStamp < TimeStampPrev) TimeStampPrev = 0;
-			xil_printf("[%8u:", LogPtr->TimeStamp);
-			xil_printf("%8u] ", (LogPtr->TimeStamp - TimeStampPrev));
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"[%8u:", LogPtr->TimeStamp);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"%8u] ", (LogPtr->TimeStamp - TimeStampPrev));
 			TimeStampPrev = LogPtr->TimeStamp;
 		}
 
 		/* Print log event */
 		switch(LogPtr->LogEvent) {
 		case(XHDCP22_RX_LOG_EVT_NONE):
-			xil_printf("-------HDCP22 RX log end-------\r\n\r\n");
+		strSize += scnprintf(buff+strSize, buff_size-strSize,
+				"-------HDCP22 RX log end-------\r\n\r\n");
 			break;
 		case XHDCP22_RX_LOG_EVT_INFO:
 			switch(LogPtr->Data)
@@ -3962,7 +3970,8 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 			default:
 				strcpy(str, "Unknown?"); break;
 			}
-			xil_printf("%s\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"%s\r\n", str);
 			break;
 		case XHDCP22_RX_LOG_EVT_INFO_STATE:
 			switch(LogPtr->Data)
@@ -4007,7 +4016,8 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 			default:
 				strcpy(str, "Unknown?"); break;
 			}
-			xil_printf("Current state [%s]\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Current state [%s]\r\n", str);
 			break;
 		case XHDCP22_RX_LOG_EVT_INFO_MESSAGE:
 			switch(LogPtr->Data)
@@ -4042,7 +4052,8 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 			default:
 				strcpy(str, "Unknown?"); break;
 			}
-			xil_printf("%s\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"%s\r\n", str);
 			break;
 		case XHDCP22_RX_LOG_EVT_DEBUG:
 			switch(LogPtr->Data)
@@ -4091,7 +4102,8 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 			default:
 				strcpy(str, "Unknown?"); break;
 			}
-			xil_printf("Debug: Event [%s]\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Debug: Event [%s]\r\n", str);
 			break;
 		case XHDCP22_RX_LOG_EVT_ERROR:
 			switch(LogPtr->Data)
@@ -4128,16 +4140,20 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 			default:
 				strcpy(str, "Unknown?"); break;
 			}
-			xil_printf("Error: %s\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Error: %s\r\n", str);
 			break;
 		case XHDCP22_RX_LOG_EVT_USER:
-			xil_printf("User: %d\r\n", LogPtr->Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"User: %d\r\n", LogPtr->Data);
 			break;
 		default:
-			xil_printf("Error: Unknown log event\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Error: Unknown log event\r\n");
 			break;
 		}
 	} while (LogPtr->LogEvent != XHDCP22_RX_LOG_EVT_NONE);
+	return strSize;
 }
 
 /*****************************************************************************/

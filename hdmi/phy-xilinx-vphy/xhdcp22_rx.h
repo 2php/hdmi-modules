@@ -646,7 +646,7 @@ void XHdcp22Rx_LogReset(XHdcp22_Rx *InstancePtr, u8 Verbose);
 u32  XHdcp22Rx_LogGetTimeUSecs(XHdcp22_Rx *InstancePtr);
 void XHdcp22Rx_LogWr(XHdcp22_Rx *InstancePtr, u16 Evt, u16 Data);
 XHdcp22_Rx_LogItem* XHdcp22Rx_LogRd(XHdcp22_Rx *InstancePtr);
-void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr);
+int XHdcp22Rx_LogShow(XHdcp22_Rx *InstancePtr, char *buff, int buff_size);
 
 /* Functions for repeater upstream interface */
 void XHdcp22Rx_SetTopology(XHdcp22_Rx *InstancePtr, const XHdcp22_Rx_Topology *TopologyPtr);

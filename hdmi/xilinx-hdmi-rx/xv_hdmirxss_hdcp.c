@@ -1206,9 +1206,9 @@ void XV_HdmiRxSs_HdcpSetKey(XV_HdmiRxSs *InstancePtr, XV_HdmiRxSs_HdcpKeyType Ke
 * @note   None.
 *
 ******************************************************************************/
-void XV_HdmiRxSs_HdcpInfo(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
+int XV_HdmiRxSs_HdcpInfo(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
 {
-  int strSize = -1;
+  int strSize = 0;
   /* Verify argument. */
   Xil_AssertVoid(InstancePtr != NULL);
 
@@ -1247,9 +1247,8 @@ void XV_HdmiRxSs_HdcpInfo(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
     case XV_HDMIRXSS_HDCP_22:
       if (InstancePtr->Hdcp22Ptr) {
         if (XHdcp22Rx_IsEnabled(InstancePtr->Hdcp22Ptr)) {
-          XHdcp22Rx_LogDisplay(InstancePtr->Hdcp22Ptr);
-
-          strSize = scnprintf(buff+strSize, buff_size-strSize,
+          strSize = XHdcp22Rx_LogShow(InstancePtr->Hdcp22Ptr, buff, buff_size);
+          strSize += scnprintf(buff+strSize, buff_size-strSize,
               "HDCP 2.2 RX Info\r\n");
           XDebug_SetDebugBufPrintf(buff,buff_size, &strSize);
           XHdcp22Rx_Info(InstancePtr->Hdcp22Ptr);
@@ -1267,6 +1266,7 @@ void XV_HdmiRxSs_HdcpInfo(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
     default:
       xil_printf("\r\nHDCP info unknown?\r\n");
   }
+  return (strSize>0 ? strSize+1 : strSize);
 }
 #endif
 
