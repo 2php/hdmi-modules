@@ -4203,14 +4203,17 @@ XHdcp22_Tx_LogItem* XHdcp22Tx_LogRd(XHdcp22_Tx *InstancePtr)
 * This function prints the content of log buffer.
 *
 * @param  InstancePtr is a pointer to the HDCP22 TX core instance.
+* @param  buff is a pointer to the buffer to write to.
+* @param  buff_size is the size of the passed buffer
 *
-* @return None.
+* @return Number of characters printed to the buffer.
 *
 * @note   None.
 *
 ******************************************************************************/
-void XHdcp22Tx_LogDisplay(XHdcp22_Tx *InstancePtr)
+int XHdcp22Tx_LogShow(XHdcp22_Tx *InstancePtr, char *buff, int buff_size)
 {
+	int strSize = 0;
 	XHdcp22_Tx_LogItem* LogPtr;
 	char str[255];
 	u32 TimeStampPrev = 0;
@@ -4225,8 +4228,10 @@ void XHdcp22Tx_LogDisplay(XHdcp22_Tx *InstancePtr)
 	}
 #endif
 
-	xil_printf("\r\n-------HDCP22 TX log start-------\r\n");
-	xil_printf("[Time(us):Delta(us)] <Event>\n\r");
+	strSize += scnprintf(buff+strSize, buff_size-strSize,
+			"\r\n-------HDCP22 TX log start-------\r\n");
+	strSize += scnprintf(buff+strSize, buff_size-strSize,
+			"[Time(us):Delta(us)] <Event>\n\r");
 	strcpy(str, "UNDEFINED");
 	do {
 		/* Read log data */
@@ -4236,15 +4241,18 @@ void XHdcp22Tx_LogDisplay(XHdcp22_Tx *InstancePtr)
 		if(LogPtr->LogEvent != XHDCP22_TX_LOG_EVT_NONE)
 		{
 			if(LogPtr->TimeStamp < TimeStampPrev) TimeStampPrev = 0;
-			xil_printf("[%8u:", LogPtr->TimeStamp);
-			xil_printf("%8u] ", (LogPtr->TimeStamp - TimeStampPrev));
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"[%8u:", LogPtr->TimeStamp);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"%8u] ", (LogPtr->TimeStamp - TimeStampPrev));
 			TimeStampPrev = LogPtr->TimeStamp;
 		}
 
 		/* Print log event */
 		switch (LogPtr->LogEvent) {
 		case (XHDCP22_TX_LOG_EVT_NONE):
-			xil_printf("-------HDCP22 TX log end-------\r\n\r\n");
+		strSize += scnprintf(buff+strSize, buff_size-strSize,
+				"-------HDCP22 TX log end-------\r\n\r\n");
 			break;
 		case XHDCP22_TX_LOG_EVT_STATE:
 			switch(LogPtr->Data)
@@ -4270,7 +4278,8 @@ void XHdcp22Tx_LogDisplay(XHdcp22_Tx *InstancePtr)
 				XHDCP22_TX_CASE_TO_STR_PRE(XHDCP22_TX_STATE_, A9_1)
 				default: break;
 			};
-			xil_printf("Current state [%s]\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Current state [%s]\r\n", str);
 			break;
 		case XHDCP22_TX_LOG_EVT_POLL_RESULT:
 			switch(LogPtr->Data)
@@ -4282,7 +4291,8 @@ void XHdcp22Tx_LogDisplay(XHdcp22_Tx *InstancePtr)
 			case XHDCP22_TX_REAUTHENTICATE_REQUESTED: strcpy(str, "RE-AUTHENTICATION REQUESTED"); break;
 			default: break;
 			}
-			xil_printf("Poll result [%s]\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Poll result [%s]\r\n", str);
 			break;
 		case XHDCP22_TX_LOG_EVT_ENABLED:
 			if (LogPtr->Data == (FALSE)) {
@@ -4290,10 +4300,12 @@ void XHdcp22Tx_LogDisplay(XHdcp22_Tx *InstancePtr)
 			} else {
 				strcpy(str, "ENABLED");
 			}
-			xil_printf("State machine [%s]\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"State machine [%s]\r\n", str);
 			break;
 		case XHDCP22_TX_LOG_EVT_RESET:
-			xil_printf("Asserted [RESET]\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Asserted [RESET]\r\n");
 			break;
 		case XHDCP22_TX_LOG_EVT_ENCR_ENABLED:
 			if (LogPtr->Data == (FALSE)) {
@@ -4301,7 +4313,8 @@ void XHdcp22Tx_LogDisplay(XHdcp22_Tx *InstancePtr)
 			} else {
 				strcpy(str, "ENABLED");
 			}
-			xil_printf("Encryption [%s]\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Encryption [%s]\r\n", str);
 			break;
 		case XHDCP22_TX_LOG_EVT_TEST_ERROR:
 			switch(LogPtr->Data)
@@ -4317,13 +4330,16 @@ void XHdcp22Tx_LogDisplay(XHdcp22_Tx *InstancePtr)
 			      break;
 			default: break;
 			};
-			xil_printf("Error: Test error [%s]\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Error: Test error [%s]\r\n", str);
 			break;
 		case XHDCP22_TX_LOG_EVT_LCCHK_COUNT:
-			xil_printf("Locality check count [%d]\r\n", LogPtr->Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Locality check count [%d]\r\n", LogPtr->Data);
 			break;
 		case XHDCP22_TX_LOG_EVT_STRMMNGCHK_COUNT:
-			xil_printf("Content Stream Management check count [%d]\r\n", LogPtr->Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Content Stream Management check count [%d]\r\n", LogPtr->Data);
 			break;
 		case XHDCP22_TX_LOG_EVT_DBG:
 			switch(LogPtr->Data)
@@ -4375,16 +4391,21 @@ void XHdcp22Tx_LogDisplay(XHdcp22_Tx *InstancePtr)
 				XHDCP22_TX_CASE_TO_STR_PRE(XHDCP22_TX_LOG_DBG_, MSG_READ_FAIL)
 				default: break;
 			};
-			xil_printf("Debug: Event [%s]\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Debug: Event [%s]\r\n", str);
 			break;
 		case XHDCP22_TX_LOG_EVT_USER:
-			xil_printf("User: %d\r\n", LogPtr->Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"User: %d\r\n", LogPtr->Data);
 			break;
 		default:
-			xil_printf("Error: Unknown log event\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Error: Unknown log event\r\n");
 			break;
 		}
 	} while (LogPtr->LogEvent != XHDCP22_TX_LOG_EVT_NONE);
+
+	return strSize;
 }
 
 /*****************************************************************************/
