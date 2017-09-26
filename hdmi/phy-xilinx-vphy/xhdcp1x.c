@@ -91,14 +91,6 @@
 
 /************************** Global Declarations ******************************/
 
-XHdcp1x_Printf XHdcp1xDebugPrintf = NULL;	/**< Instance of function
-						  *  interface used for debug
-						  *  print statement */
-
-char *XHdcp1xDebugBuff = NULL;
-int XHdcp1xDebugBuffSize = 0;
-int *XHdcp1xDebugBuffPos = NULL;
-
 XHdcp1x_LogMsg XHdcp1xDebugLogMsg = NULL;	/**< Instance of function
 						  *  interface used for debug
 						  *  log message statement */
@@ -145,7 +137,7 @@ int XHdcp1x_CfgInitialize(XHdcp1x *InstancePtr, const XHdcp1x_Config *CfgPtr,
 
 	/* clear instance */
 	memset(InstancePtr, 0, sizeof(XHdcp1x));
-	
+
 	/* Initialize InstancePtr. */
 	InstancePtr->Config = *CfgPtr;
 	InstancePtr->Config.BaseAddress = EffectiveAddr;
@@ -232,7 +224,7 @@ int XHdcp1x_CfgInitialize(XHdcp1x *InstancePtr, const XHdcp1x_Config *CfgPtr,
 		/* Initialize RX */
 		XHdcp1x_RxInit(InstancePtr);
 	}
-	
+
 	InstancePtr->IsReady = XIL_COMPONENT_IS_READY;
 
 	return (XST_SUCCESS);
@@ -1086,10 +1078,11 @@ void XHdcp1x_HandleTimeout(void *InstancePtr)
 	else
 #endif
 	{
-		XHDCP1X_DEBUG_PRINTF("unknown interface type\r\n");
+		XDEBUG_PRINTF("unknown interface type\r\n");
 	}
 }
 
+#if 0
 void XHdcp1x_DebugBufPrintf(const char *fmt, ...)
 {
 	if(XHdcp1xDebugBuff != NULL)
@@ -1131,22 +1124,7 @@ void XHdcp1x_SetDebugBufPrintf(char *buff, int buff_size, int *buff_pos)
 		XHdcp1xDebugBuffPos = NULL;
 	}
 }
-
-/*****************************************************************************/
-/**
-* This function sets the debug printf function for the module.
-*
-* @param	PrintfFunc is the printf function.
-*
-* @return	None.
-*
-* @note		None.
-*
-******************************************************************************/
-void XHdcp1x_SetDebugPrintf(XHdcp1x_Printf PrintfFunc)
-{
-	XHdcp1xDebugPrintf = PrintfFunc;
-}
+#endif
 
 /*****************************************************************************/
 /**
@@ -1308,7 +1286,7 @@ void XHdcp1x_Info(const XHdcp1x *InstancePtr)
 	else
 #endif
 	{
-		XHDCP1X_DEBUG_PRINTF("unknown interface type\r\n");
+		XDEBUG_PRINTF("unknown interface type\r\n");
 	}
 }
 
@@ -1368,7 +1346,7 @@ void *XHdcp1x_GetTopology(XHdcp1x *InstancePtr)
 	else
 #endif
 	{
-		XHDCP1X_DEBUG_PRINTF("unknown interface type\r\n");
+		XDEBUG_PRINTF("unknown interface type\r\n");
 	}
 
 	return TopologyPtr;
@@ -1614,7 +1592,7 @@ int XHdcp1x_IsRepeater(XHdcp1x *InstancePtr)
 	else
 #endif
 	{
-		XHDCP1X_DEBUG_PRINTF("unknown interface type\r\n");
+		XDEBUG_PRINTF("unknown interface type\r\n");
 	}
 
 	return Status;
@@ -1713,7 +1691,7 @@ void XHdcp1x_SetTopologyUpdate(XHdcp1x *InstancePtr)
 	else
 #endif
 	{
-		XHDCP1X_DEBUG_PRINTF("unknown interface type\r\n");
+		XDEBUG_PRINTF("unknown interface type\r\n");
 	}
 }
 
@@ -1747,7 +1725,7 @@ void XHdcp1x_SetHdmiMode(XHdcp1x *InstancePtr, u8 Value)
 	} else
 #endif
 	{
-		XHDCP1X_DEBUG_PRINTF("unknown interface type\r\n");
+		XDEBUG_PRINTF("unknown interface type\r\n");
 	}
 }
 /** @} */

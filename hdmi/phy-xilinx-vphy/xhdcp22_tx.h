@@ -1,4 +1,4 @@
-/******************************************************************************
+	/******************************************************************************
 *
  *
  * Copyright (C) 2015, 2016, 2017 Xilinx, Inc.
@@ -598,7 +598,7 @@ XTmrCtr* XHdcp22Tx_GetTimer(XHdcp22_Tx *InstancePtr);
 void XHdcp22Tx_LogReset(XHdcp22_Tx *InstancePtr, u8 Verbose);
 void XHdcp22Tx_LogWr(XHdcp22_Tx *InstancePtr, XHdcp22_Tx_LogEvt Evt, u16 Data);
 XHdcp22_Tx_LogItem* XHdcp22Tx_LogRd(XHdcp22_Tx *InstancePtr);
-void XHdcp22Tx_LogDisplay(XHdcp22_Tx *InstancePtr);
+int XHdcp22Tx_LogShow(XHdcp22_Tx *InstancePtr, char *buff, int buff_size);
 u32  XHdcp22Tx_LogGetTimeUSecs(XHdcp22_Tx *InstancePtr);
 void XHdcp22Tx_SetMessagePollingValue(XHdcp22_Tx *InstancePtr, u32 PollingValue);
 void XHdcp22Tx_Info(XHdcp22_Tx *InstancePtr);

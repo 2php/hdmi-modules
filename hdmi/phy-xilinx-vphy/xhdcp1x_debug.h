@@ -36,6 +36,8 @@
 /**< Prevent circular inclusions by using protection macros */
 #define XHDCP1X_DEBUG_H
 
+#include "xdebug.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,8 +50,6 @@ extern "C" {
 
 /***************** Macros (Inline Functions) Definitions *********************/
 
-#define XHDCP1X_DEBUG_PRINTF if (XHdcp1xDebugPrintf != NULL) XHdcp1xDebugPrintf
- /**< Instance of the function interface used for debug print statements. */
 #define XHDCP1X_DEBUG_LOGMSG if (XHdcp1xDebugLogMsg != NULL) XHdcp1xDebugLogMsg
  /**< Instance of the function interface used for debug log messages. */
 
@@ -59,9 +59,6 @@ extern "C" {
 
 /************************* External Declarations *****************************/
 
-extern XHdcp1x_Printf XHdcp1xDebugPrintf;	/**< Instance of function
-						  *  interface used for debug
-						  *  print statement */
 extern XHdcp1x_LogMsg XHdcp1xDebugLogMsg;	/**< Instance of function
 						  *  interface used for debug
 						  *  log message statement */

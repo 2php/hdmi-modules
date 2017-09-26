@@ -1,8 +1,12 @@
 # build 3 modules: vphy hdmi-rx and hdmi-tx
 obj-m += xilinx-vphy.o xilinx-hdmi-rx.o xilinx-hdmi-tx.o
 
+ccflags-y += -DIGNORE_THIS
+
+//ccflags-y += -DDEBUG
+
 # in same cases only used to check against presence, i.e. >0, actual number is not used
-ccflags-y := -DXPAR_XVPHY_NUM_INSTANCES=4
+ccflags-y += -DXPAR_XVPHY_NUM_INSTANCES=4
 ccflags-y += -DXPAR_XV_HDMIRXSS_NUM_INSTANCES=4
 ccflags-y += -DXPAR_XV_HDMITXSS_NUM_INSTANCES=4
 ccflags-y += -DXPAR_XV_HDMIRX_NUM_INSTANCES=4
@@ -74,6 +78,8 @@ xilinx-vphy-objs := phy-vphy.o
 # the C API around the IP registers
 CFLAGS_phy-vphy.o += -I$(src)/phy-xilinx-vphy/
 CFLAGS_phy-vphy.o += -I$(src)/include/
+
+xilinx-vphy-objs += phy-xilinx-vphy/xdebug.o
 xilinx-vphy-objs += phy-xilinx-vphy/xvphy.o
 xilinx-vphy-objs += phy-xilinx-vphy/xvphy_i.o
 xilinx-vphy-objs += phy-xilinx-vphy/xvphy_gthe4.o

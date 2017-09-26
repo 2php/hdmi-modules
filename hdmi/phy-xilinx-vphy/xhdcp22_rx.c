@@ -3908,13 +3908,16 @@ XHdcp22_Rx_LogItem* XHdcp22Rx_LogRd(XHdcp22_Rx *InstancePtr)
 * This function prints the contents of the log buffer.
 *
 * @param	InstancePtr is a pointer to the XHdcp22_Rx core instance.
+* @param	buff is a pointer to the buffer to write to.
+* @param	buff_size is the size of the passed buffer
 *
-* @return	None.
+* @return	Number of characters printed to the buffer.
 *
 * @note		None.
 ******************************************************************************/
-void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
+int XHdcp22Rx_LogShow(XHdcp22_Rx *InstancePtr, char *buff, int buff_size)
 {
+	int strSize = 0;
 	XHdcp22_Rx_LogItem* LogPtr;
 	char str[255];
 	u32 TimeStampPrev = 0;
@@ -3922,8 +3925,10 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 	/* Verify argument. */
 	Xil_AssertVoid(InstancePtr != NULL);
 
-	xil_printf("\r\n-------HDCP22 RX log start-------\r\n");
-	xil_printf("[Time(us):Delta(us)] <Event>\n\r");
+	strSize = scnprintf(buff+strSize, buff_size-strSize,
+			"\r\n-------HDCP22 RX log start-------\r\n");
+	strSize += scnprintf(buff+strSize, buff_size-strSize,
+			"[Time(us):Delta(us)] <Event>\n\r");
 	strcpy(str, "UNDEFINED");
 	do {
 		/* Read log data */
@@ -3933,15 +3938,18 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 		if(LogPtr->LogEvent != XHDCP22_RX_LOG_EVT_NONE)
 		{
 			if(LogPtr->TimeStamp < TimeStampPrev) TimeStampPrev = 0;
-			xil_printf("[%8u:", LogPtr->TimeStamp);
-			xil_printf("%8u] ", (LogPtr->TimeStamp - TimeStampPrev));
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"[%8u:", LogPtr->TimeStamp);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"%8u] ", (LogPtr->TimeStamp - TimeStampPrev));
 			TimeStampPrev = LogPtr->TimeStamp;
 		}
 
 		/* Print log event */
 		switch(LogPtr->LogEvent) {
 		case(XHDCP22_RX_LOG_EVT_NONE):
-			xil_printf("-------HDCP22 RX log end-------\r\n\r\n");
+		strSize += scnprintf(buff+strSize, buff_size-strSize,
+				"-------HDCP22 RX log end-------\r\n\r\n");
 			break;
 		case XHDCP22_RX_LOG_EVT_INFO:
 			switch(LogPtr->Data)
@@ -3962,7 +3970,8 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 			default:
 				strcpy(str, "Unknown?"); break;
 			}
-			xil_printf("%s\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"%s\r\n", str);
 			break;
 		case XHDCP22_RX_LOG_EVT_INFO_STATE:
 			switch(LogPtr->Data)
@@ -4007,7 +4016,8 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 			default:
 				strcpy(str, "Unknown?"); break;
 			}
-			xil_printf("Current state [%s]\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Current state [%s]\r\n", str);
 			break;
 		case XHDCP22_RX_LOG_EVT_INFO_MESSAGE:
 			switch(LogPtr->Data)
@@ -4042,7 +4052,8 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 			default:
 				strcpy(str, "Unknown?"); break;
 			}
-			xil_printf("%s\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"%s\r\n", str);
 			break;
 		case XHDCP22_RX_LOG_EVT_DEBUG:
 			switch(LogPtr->Data)
@@ -4091,7 +4102,8 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 			default:
 				strcpy(str, "Unknown?"); break;
 			}
-			xil_printf("Debug: Event [%s]\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Debug: Event [%s]\r\n", str);
 			break;
 		case XHDCP22_RX_LOG_EVT_ERROR:
 			switch(LogPtr->Data)
@@ -4128,16 +4140,20 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 			default:
 				strcpy(str, "Unknown?"); break;
 			}
-			xil_printf("Error: %s\r\n", str);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Error: %s\r\n", str);
 			break;
 		case XHDCP22_RX_LOG_EVT_USER:
-			xil_printf("User: %d\r\n", LogPtr->Data);
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"User: %d\r\n", LogPtr->Data);
 			break;
 		default:
-			xil_printf("Error: Unknown log event\r\n");
+			strSize += scnprintf(buff+strSize, buff_size-strSize,
+					"Error: Unknown log event\r\n");
 			break;
 		}
 	} while (LogPtr->LogEvent != XHDCP22_RX_LOG_EVT_NONE);
+	return strSize;
 }
 
 /*****************************************************************************/
@@ -4153,61 +4169,65 @@ void XHdcp22Rx_LogDisplay(XHdcp22_Rx *InstancePtr)
 ******************************************************************************/
 void XHdcp22Rx_Info(XHdcp22_Rx *InstancePtr)
 {
-	xil_printf("Status: ");
+	XDEBUG_PRINTF("Status: ");
 	if (XHdcp22Rx_IsEnabled(InstancePtr)) {
 		switch (InstancePtr->Info.AuthenticationStatus) {
 			case XHDCP22_RX_UNAUTHENTICATED :
-			xil_printf("Not Authenticated.\n\r");
+				XDEBUG_PRINTF("Not Authenticated.\n\r");
 			break;
 
 			case XHDCP22_RX_AUTHENTICATION_BUSY :
-			xil_printf("Authentication Busy.\n\r");
+				XDEBUG_PRINTF("Authentication Busy.\n\r");
 			break;
 
 			case XHDCP22_RX_AUTHENTICATED :
-			xil_printf("Authenticated.\n\r");
+				XDEBUG_PRINTF("Authenticated.\n\r");
 			break;
 
 			case XHDCP22_RX_REAUTHENTICATE_REQUESTED :
-			xil_printf("Reauthentication Requested.\n\r");
+				XDEBUG_PRINTF("Reauthentication Requested.\n\r");
 			break;
 
 			default :
-			xil_printf("Unknown?\n\r");
+				XDEBUG_PRINTF("Unknown?\n\r");
 			break;
 		}
 	} else {
-		xil_printf("Core is disabled.\n\r");
+		XDEBUG_PRINTF("Core is disabled.\n\r");
 	}
 
-	xil_printf("Encryption: ");
+	XDEBUG_PRINTF("Encryption: ");
 	if (XHdcp22Rx_IsEncryptionEnabled(InstancePtr)) {
-		xil_printf("Enabled.\n\r");
+		XDEBUG_PRINTF("Enabled.\n\r");
 	} else {
-		xil_printf("Disabled.\n\r");
+		XDEBUG_PRINTF("Disabled.\n\r");
 	}
 
-	xil_printf("Repeater: ");
+	XDEBUG_PRINTF("Repeater: ");
 	if (XHdcp22Rx_IsRepeater(InstancePtr)) {
 		if (InstancePtr->Topology.MaxDevsExceeded)
-			xil_printf("MaxDevsExceeded, ");
+			XDEBUG_PRINTF("MaxDevsExceeded, ");
+
 		if (InstancePtr->Topology.MaxCascadeExceeded)
-			xil_printf("MaxCascadeExceeded, ");
+			XDEBUG_PRINTF("MaxCascadeExceeded, ");
+
 		if (InstancePtr->Topology.Hdcp20RepeaterDownstream)
-			xil_printf("Hdcp20RepeaterDownstream, ");
+			XDEBUG_PRINTF("Hdcp20RepeaterDownstream, ");
+
 		if (InstancePtr->Topology.Hdcp1DeviceDownstream)
-			xil_printf("Hdcp1DeviceDownstream, ");
-		xil_printf("Depth=%d, ", InstancePtr->Topology.Depth);
-		xil_printf("DeviceCnt=%d, ", InstancePtr->Topology.DeviceCnt);
-		xil_printf("StreamType=%d\n\r", XHdcp22Rx_GetContentStreamType(InstancePtr));
+			XDEBUG_PRINTF("Hdcp1DeviceDownstream, ");
+
+		XDEBUG_PRINTF("Depth=%d, ", InstancePtr->Topology.Depth);
+		XDEBUG_PRINTF("DeviceCnt=%d, ", InstancePtr->Topology.DeviceCnt);
+		XDEBUG_PRINTF("StreamType=%d\n\r", XHdcp22Rx_GetContentStreamType(InstancePtr));
 	} else {
-		xil_printf("Disabled.\n\r");
+		XDEBUG_PRINTF("Disabled.\n\r");
 	}
 
-	xil_printf("Auth Requests: %d\n\r", InstancePtr->Info.AuthRequestCnt);
-	xil_printf("Reauth Requests: %d\n\r", InstancePtr->Info.ReauthRequestCnt);
-	xil_printf("Link Errors: %d\n\r", InstancePtr->Info.LinkErrorCnt);
-	xil_printf("DDC Errors: %d\n\r", InstancePtr->Info.DdcErrorCnt);
+	XDEBUG_PRINTF("Auth Requests: %d\n\r", InstancePtr->Info.AuthRequestCnt);
+	XDEBUG_PRINTF("Reauth Requests: %d\n\r", InstancePtr->Info.ReauthRequestCnt);
+	XDEBUG_PRINTF("Link Errors: %d\n\r", InstancePtr->Info.LinkErrorCnt);
+	XDEBUG_PRINTF("DDC Errors: %d\n\r", InstancePtr->Info.DdcErrorCnt);
 }
 
 /*****************************************************************************/

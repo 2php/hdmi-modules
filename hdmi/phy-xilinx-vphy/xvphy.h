@@ -68,6 +68,7 @@
 #include "xvphy_hw.h"
 #include "xil_printf.h"
 #include "xvidc.h"
+#include "xdebug.h"
 //#include "xvphy_dp.h"
 
 /****************************** Type Definitions ******************************/

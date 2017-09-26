@@ -49,6 +49,7 @@
 #include "phy-xilinx-vphy/xvphy_i.h"
 
 /* common RX/TX */
+#include "phy-xilinx-vphy/xdebug.h"
 #include "phy-xilinx-vphy/xvidc.h"
 #include "phy-xilinx-vphy/xvidc_edid.h"
 #include "phy-xilinx-vphy/xtmrctr.h"
@@ -696,8 +697,6 @@ EXPORT_SYMBOL_GPL(aes256_init);
 EXPORT_SYMBOL_GPL(aes256_decrypt_ecb);
 
 /* Global API's for xhdcp1x */
-EXPORT_SYMBOL_GPL(XHdcp1x_SetDebugPrintf);
-EXPORT_SYMBOL_GPL(XHdcp1x_SetDebugBufPrintf);
 EXPORT_SYMBOL_GPL(XHdcp1x_SetTopologyUpdate);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_LoadPublicCert);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_LoadLc128);
@@ -767,7 +766,7 @@ EXPORT_SYMBOL_GPL(XHdcp22Rx_LogReset);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_Reset);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_SetTopologyUpdate);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_Poll);
-EXPORT_SYMBOL_GPL(XHdcp22Rx_LogDisplay);
+EXPORT_SYMBOL_GPL(XHdcp22Rx_LogShow);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_CfgInitialize);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_IsInProgress);
 EXPORT_SYMBOL_GPL(XHdcp22Rx_GetTimer);
@@ -814,13 +813,13 @@ EXPORT_SYMBOL_GPL(XHdcp22Tx_GetVersion);
 EXPORT_SYMBOL_GPL(XHdcp22Tx_SetCallback);
 EXPORT_SYMBOL_GPL(XHdcp22Tx_SetContentStreamType);
 EXPORT_SYMBOL_GPL(XHdcp22Tx_EnableBlank);
-EXPORT_SYMBOL_GPL(XHdcp22Tx_LogDisplay);
+EXPORT_SYMBOL_GPL(XHdcp22Tx_LogShow);
 EXPORT_SYMBOL_GPL(XHdcp22Tx_EnableEncryption);
 EXPORT_SYMBOL_GPL(XHdcp22Tx_Poll);
 
-
-
-#ifdef DEBUG
+//#ifdef DEBUG
 EXPORT_SYMBOL_GPL(XVphy_HdmiDebugInfo);
-#endif
+EXPORT_SYMBOL_GPL(XDebug_SetDebugBufPrintf);
+EXPORT_SYMBOL_GPL(XDebug_SetDebugPrintf);
+//#endif
 EXPORT_SYMBOL_GPL(XVphy_LogShow);

@@ -806,12 +806,6 @@ typedef void (*XHdcp1x_Callback)(void *CallbackRef);
 
 /**
  * This typedef defines the function interface that is to be used for debug
- * print statements within this driver
- */
-typedef void (*XHdcp1x_Printf)(const char *fmt, ...);
-
-/**
- * This typedef defines the function interface that is to be used for debug
  * log message statements within this driver
  */
 typedef void (*XHdcp1x_LogMsg)(const char *fmt, ...);
@@ -1206,8 +1200,6 @@ int XHdcp1x_SetCallback(XHdcp1x *InstancePtr,
 void XHdcp1x_CipherIntrHandler(void *InstancePtr);
 void XHdcp1x_PortIntrHandler(void *InstancePtr, u32 IntCause);
 
-void XHdcp1x_SetDebugBufPrintf(char *buff, int buff_size, int *buff_pos);
-void XHdcp1x_SetDebugPrintf(XHdcp1x_Printf PrintfFunc);
 void XHdcp1x_SetDebugLogMsg(XHdcp1x_LogMsg LogFunc);
 
 void XHdcp1x_SetKsvRevokeCheck(XHdcp1x_KsvRevokeCheck RevokeCheckFunc);

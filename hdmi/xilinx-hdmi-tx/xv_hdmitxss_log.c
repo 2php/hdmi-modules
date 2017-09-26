@@ -158,14 +158,14 @@ u16 XV_HdmiTxSs_LogRead(XV_HdmiTxSs *InstancePtr)
 * @param	buff Buffer to print to
 * @param	buff_size size off buff passed
 *
-* @return	None.
+* @return	The number of characters written to buff.
 *
 * @note		None.
 *
 ******************************************************************************/
 int XV_HdmiTxSs_LogShow(XV_HdmiTxSs *InstancePtr, char *buff, int buff_size)
 {
-	int strSize = -1;
+	int strSize = 0;
 #ifdef XV_HDMITXSS_LOG_ENABLE
 	u16 Log;
 	u8 Evt;
@@ -283,7 +283,7 @@ int XV_HdmiTxSs_LogShow(XV_HdmiTxSs *InstancePtr, char *buff, int buff_size)
 		Log = XV_HdmiTxSs_LogRead(InstancePtr);
 	}
 #else
-    xil_printf("\r\n INFO:: HDMITXSS Log Feature is Disabled \r\n");
+    strSize = scnprintf(buff, buff_size, "\r\n INFO:: HDMITXSS Log Feature is Disabled \r\n");
 #endif
-    return strSize+1;
+    return strSize;
 }
