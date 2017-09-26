@@ -74,6 +74,7 @@ xilinx-vphy-objs := phy-vphy.o
 # the C API around the IP registers
 CFLAGS_phy-vphy.o += -I$(src)/phy-xilinx-vphy/
 CFLAGS_phy-vphy.o += -I$(src)/include/
+xilinx-vphy-objs += phy-xilinx-vphy/xdebug.o
 xilinx-vphy-objs += phy-xilinx-vphy/xvphy.o
 xilinx-vphy-objs += phy-xilinx-vphy/xvphy_i.o
 xilinx-vphy-objs += phy-xilinx-vphy/xvphy_gthe4.o

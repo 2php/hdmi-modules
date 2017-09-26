@@ -626,6 +626,8 @@ XHdcp22_Tx_Config XHdcp22_Tx_ConfigTable[XPAR_XHDCP22_TX_NUM_INSTANCES];
 
 /* common functionality shared between RX and TX */
 /* xvidc component */
+EXPORT_SYMBOL_GPL(XDebug_SetDebugBufPrintf);
+EXPORT_SYMBOL_GPL(XDebug_SetDebugPrintf);
 EXPORT_SYMBOL_GPL(XVidC_ReportTiming);
 EXPORT_SYMBOL_GPL(XVidC_SetVideoStream);
 EXPORT_SYMBOL_GPL(XVidC_ReportStreamInfo);
@@ -647,8 +649,6 @@ EXPORT_SYMBOL_GPL(XHdcp22_Rx_ConfigTable);
 EXPORT_SYMBOL_GPL(XHdcp22_Tx_ConfigTable);
 
 /* Global API's for xhdcp1x */
-EXPORT_SYMBOL_GPL(XHdcp1x_SetDebugBufPrintf);
-EXPORT_SYMBOL_GPL(XHdcp1x_SetDebugPrintf); 
 EXPORT_SYMBOL_GPL(XHdcp1x_SetTopologyUpdate); 
 EXPORT_SYMBOL_GPL(XHdcp22Rx_LoadPublicCert); 
 EXPORT_SYMBOL_GPL(XHdcp22Rx_LoadLc128); 

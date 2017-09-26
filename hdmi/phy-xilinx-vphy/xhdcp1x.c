@@ -91,14 +91,6 @@
 
 /************************** Global Declarations ******************************/
 
-XHdcp1x_Printf XHdcp1xDebugPrintf = NULL;	/**< Instance of function
-						  *  interface used for debug
-						  *  print statement */
-
-char *XHdcp1xDebugBuff = NULL;
-int XHdcp1xDebugBuffSize = 0;
-int *XHdcp1xDebugBuffPos = NULL;
-
 XHdcp1x_LogMsg XHdcp1xDebugLogMsg = NULL;	/**< Instance of function
 						  *  interface used for debug
 						  *  log message statement */
@@ -1086,66 +1078,8 @@ void XHdcp1x_HandleTimeout(void *InstancePtr)
 	else
 #endif
 	{
-		XHDCP1X_DEBUG_PRINTF("unknown interface type\r\n");
+		XDEBUG_PRINTF("unknown interface type\r\n");
 	}
-}
-
-void XHdcp1x_DebugBufPrintf(const char *fmt, ...)
-{
-	if(XHdcp1xDebugBuff != NULL)
-	{
-		va_list args;
-		va_start(args, fmt);
-		*XHdcp1xDebugBuffPos += vscnprintf(XHdcp1xDebugBuff + *XHdcp1xDebugBuffPos,
-				XHdcp1xDebugBuffSize - *XHdcp1xDebugBuffPos, fmt, args);
-		va_end(args);
-	}
-}
-
-/*****************************************************************************/
-/**
-* This function sets the debug printf function for the module to print to the
-* supplied buffer.
-*
-* @param	buff is the buffer to print to.
-* @param	buff_size is the maximum size of the buffer
-* @param	buff_pos is the current (and will be updated) position in the buffer
-*
-* @return	None.
-*
-* @note		None.
-*
-******************************************************************************/
-void XHdcp1x_SetDebugBufPrintf(char *buff, int buff_size, int *buff_pos)
-{
-	if(buff)
-	{
-		XHdcp1xDebugBuff = buff;
-		XHdcp1xDebugBuffSize = buff_size;
-		XHdcp1xDebugBuffPos = buff_pos;
-		XHdcp1x_SetDebugPrintf(XHdcp1x_DebugBufPrintf);
-	} else {
-		XHdcp1x_SetDebugPrintf(NULL);
-		XHdcp1xDebugBuff = NULL;
-		XHdcp1xDebugBuffSize = 0;
-		XHdcp1xDebugBuffPos = NULL;
-	}
-}
-
-/*****************************************************************************/
-/**
-* This function sets the debug printf function for the module.
-*
-* @param	PrintfFunc is the printf function.
-*
-* @return	None.
-*
-* @note		None.
-*
-******************************************************************************/
-void XHdcp1x_SetDebugPrintf(XHdcp1x_Printf PrintfFunc)
-{
-	XHdcp1xDebugPrintf = PrintfFunc;
 }
 
 /*****************************************************************************/
@@ -1308,7 +1242,7 @@ void XHdcp1x_Info(const XHdcp1x *InstancePtr)
 	else
 #endif
 	{
-		XHDCP1X_DEBUG_PRINTF("unknown interface type\r\n");
+		XDEBUG_PRINTF("unknown interface type\r\n");
 	}
 }
 
@@ -1368,7 +1302,7 @@ void *XHdcp1x_GetTopology(XHdcp1x *InstancePtr)
 	else
 #endif
 	{
-		XHDCP1X_DEBUG_PRINTF("unknown interface type\r\n");
+		XDEBUG_PRINTF("unknown interface type\r\n");
 	}
 
 	return TopologyPtr;
@@ -1614,7 +1548,7 @@ int XHdcp1x_IsRepeater(XHdcp1x *InstancePtr)
 	else
 #endif
 	{
-		XHDCP1X_DEBUG_PRINTF("unknown interface type\r\n");
+		XDEBUG_PRINTF("unknown interface type\r\n");
 	}
 
 	return Status;
@@ -1713,7 +1647,7 @@ void XHdcp1x_SetTopologyUpdate(XHdcp1x *InstancePtr)
 	else
 #endif
 	{
-		XHDCP1X_DEBUG_PRINTF("unknown interface type\r\n");
+		XDEBUG_PRINTF("unknown interface type\r\n");
 	}
 }
 
@@ -1747,7 +1681,7 @@ void XHdcp1x_SetHdmiMode(XHdcp1x *InstancePtr, u8 Value)
 	} else
 #endif
 	{
-		XHDCP1X_DEBUG_PRINTF("unknown interface type\r\n");
+		XDEBUG_PRINTF("unknown interface type\r\n");
 	}
 }
 /** @} */

@@ -1228,11 +1228,11 @@ void XV_HdmiRxSs_HdcpInfo(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
               "Encryption : %s.\r\n",
               (XHdcp1x_IsEncrypted(InstancePtr->Hdcp14Ptr) ? "Enabled" : "Disabled"));
 
-          XHdcp1x_SetDebugBufPrintf(buff,buff_size, &strSize);
+          XDebug_SetDebugBufPrintf(buff,buff_size, &strSize);
           XHdcp1x_Info(InstancePtr->Hdcp14Ptr);
-          XHdcp1x_SetDebugBufPrintf(NULL,0, NULL);
+          XDebug_SetDebugBufPrintf(NULL,0, NULL);
           // Route debug output to xil_printf
-          XHdcp1x_SetDebugPrintf((void *)printk);
+          XDebug_SetDebugPrintf((void *)printk);
         }
         else {
           strSize = scnprintf(buff+strSize, buff_size-strSize,
@@ -1251,7 +1251,11 @@ void XV_HdmiRxSs_HdcpInfo(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
 
           strSize = scnprintf(buff+strSize, buff_size-strSize,
               "HDCP 2.2 RX Info\r\n");
+          XDebug_SetDebugBufPrintf(buff,buff_size, &strSize);
           XHdcp22Rx_Info(InstancePtr->Hdcp22Ptr);
+          XDebug_SetDebugBufPrintf(NULL,0, NULL);
+          // Route debug output to xil_printf
+          XDebug_SetDebugPrintf((void *)printk);
         }
         else {
           xil_printf("\r\nHDCP 2.2 RX is disabled\r\n");

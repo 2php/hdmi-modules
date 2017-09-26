@@ -4401,70 +4401,74 @@ void XHdcp22Tx_LogDisplay(XHdcp22_Tx *InstancePtr)
 ******************************************************************************/
 void XHdcp22Tx_Info(XHdcp22_Tx *InstancePtr)
 {
-	xil_printf("Status : ");
+	XDEBUG_PRINTF("Status : ");
 	if (XHdcp22Tx_IsEnabled(InstancePtr)) {
 		switch (InstancePtr->Info.AuthenticationStatus) {
 			case XHDCP22_TX_INCOMPATIBLE_RX :
-			xil_printf("RX is incompatible.\n\r");
+				XDEBUG_PRINTF("RX is incompatible.\n\r");
 			break;
 
 			case XHDCP22_TX_AUTHENTICATION_BUSY :
-			xil_printf("Busy Authentication.\n\r");
+				XDEBUG_PRINTF("Busy Authentication.\n\r");
 			break;
 
 			case XHDCP22_TX_REAUTHENTICATE_REQUESTED :
-			xil_printf("Re-authentication Requested.\n\r");
+				XDEBUG_PRINTF("Re-authentication Requested.\n\r");
 			break;
 
 			case XHDCP22_TX_UNAUTHENTICATED :
-			xil_printf("Not Authenticated.\n\r");
+				XDEBUG_PRINTF("Not Authenticated.\n\r");
 			break;
 
 			case XHDCP22_TX_AUTHENTICATED :
-			xil_printf("Authenticated.\n\r");
+				XDEBUG_PRINTF("Authenticated.\n\r");
 			break;
 
             case XHDCP22_TX_DEVICE_IS_REVOKED :
-            xil_printf("Device Revoked.\n\r");
+            	XDEBUG_PRINTF("Device Revoked.\n\r");
 
             case XHDCP22_TX_NO_SRM_LOADED :
-            xil_printf("No SRM Loaded.\n\r");
+            	XDEBUG_PRINTF("No SRM Loaded.\n\r");
 
 			default :
-			xil_printf("Unknown state.\n\r");
+				XDEBUG_PRINTF("Unknown state.\n\r");
 			break;
 		}
 	} else {
-		xil_printf("Core is disabled.\n\r");
+		XDEBUG_PRINTF("Core is disabled.\n\r");
 	}
 
-	xil_printf("Encryption : ");
+	XDEBUG_PRINTF("Encryption : ");
 	if (XHdcp22Tx_IsEncryptionEnabled(InstancePtr)) {
-		xil_printf("Enabled.\n\r");
+		XDEBUG_PRINTF("Enabled.\n\r");
 	} else {
-		xil_printf("Disabled.\n\r");
+		XDEBUG_PRINTF("Disabled.\n\r");
 	}
 
-	xil_printf("Repeater: ");
+	XDEBUG_PRINTF("Repeater: ");
 	if (XHdcp22Tx_IsRepeater(InstancePtr)) {
 		if (InstancePtr->Topology.MaxDevsExceeded)
-			xil_printf("MaxDevsExceeded, ");
+			XDEBUG_PRINTF("MaxDevsExceeded, ");
+
 		if (InstancePtr->Topology.MaxCascadeExceeded)
-			xil_printf("MaxCascadeExceeded, ");
+			XDEBUG_PRINTF("MaxCascadeExceeded, ");
+
 		if (InstancePtr->Topology.Hdcp20RepeaterDownstream)
-			xil_printf("Hdcp20RepeaterDownstream, ");
+			XDEBUG_PRINTF("Hdcp20RepeaterDownstream, ");
+
 		if (InstancePtr->Topology.Hdcp1DeviceDownstream)
-			xil_printf("Hdcp1DeviceDownstream, ");
-		xil_printf("Depth=%d, ", InstancePtr->Topology.Depth);
-		xil_printf("DeviceCnt=%d, ", InstancePtr->Topology.DeviceCnt);
-		xil_printf("StreamType=%d\n\r", InstancePtr->Info.ContentStreamType);
+			XDEBUG_PRINTF("Hdcp1DeviceDownstream, ");
+
+		XDEBUG_PRINTF("Depth=%d, ", InstancePtr->Topology.Depth);
+		XDEBUG_PRINTF("DeviceCnt=%d, ", InstancePtr->Topology.DeviceCnt);
+		XDEBUG_PRINTF("StreamType=%d\n\r", InstancePtr->Info.ContentStreamType);
 	} else {
-		xil_printf("Disabled.\n\r");
+		XDEBUG_PRINTF("Disabled.\n\r");
 	}
 
-	xil_printf("Auth Requests: %d\n\r", InstancePtr->Info.AuthRequestCnt);
-	xil_printf("Reauth Requests: %d\n\r", InstancePtr->Info.ReauthRequestCnt);
-	xil_printf("Polling Interval: %d ms\n\r", InstancePtr->Info.PollingValue);
+	XDEBUG_PRINTF("Auth Requests: %d\n\r", InstancePtr->Info.AuthRequestCnt);
+	XDEBUG_PRINTF("Reauth Requests: %d\n\r", InstancePtr->Info.ReauthRequestCnt);
+	XDEBUG_PRINTF("Polling Interval: %d ms\n\r", InstancePtr->Info.PollingValue);
 }
 
 /** @} */

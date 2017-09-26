@@ -883,60 +883,60 @@ int XHdcp1x_TxInfo(const XHdcp1x *InstancePtr)
 	Xil_AssertNonvoid(InstancePtr != NULL);
 
 	/* Display it */
-	XHDCP1X_DEBUG_PRINTF("Type:            ");
+	XDEBUG_PRINTF("Type:            ");
 	if (InstancePtr->Config.IsHDMI) {
-		XHDCP1X_DEBUG_PRINTF("hdmi-tx\r\n");
+		XDEBUG_PRINTF("hdmi-tx\r\n");
 	}
 	else {
-		XHDCP1X_DEBUG_PRINTF("dp-tx\r\n");
+		XDEBUG_PRINTF("dp-tx\r\n");
 	}
-	XHDCP1X_DEBUG_PRINTF("Current State:   %s\r\n",
+	XDEBUG_PRINTF("Current State:   %s\r\n",
 			XHdcp1x_TxStateToString(InstancePtr->Tx.CurrentState));
-	XHDCP1X_DEBUG_PRINTF("Previous State:  %s\r\n",
+	XDEBUG_PRINTF("Previous State:  %s\r\n",
 			XHdcp1x_TxStateToString(InstancePtr->Tx.PreviousState));
-	XHDCP1X_DEBUG_PRINTF("Encrypted?:      %s\r\n",
+	XDEBUG_PRINTF("Encrypted?:      %s\r\n",
 			XHdcp1x_IsEncrypted(InstancePtr) ? "Yes" : "No");
-	XHDCP1X_DEBUG_PRINTF("State Helper:    %016llX\r\n",
+	XDEBUG_PRINTF("State Helper:    %016llX\r\n",
 			InstancePtr->Tx.StateHelper);
-	XHDCP1X_DEBUG_PRINTF("Flags:           %04X\r\n",
+	XDEBUG_PRINTF("Flags:           %04X\r\n",
 			InstancePtr->Tx.Flags);
-	XHDCP1X_DEBUG_PRINTF("Encryption Map:  %016llX\r\n",
+	XDEBUG_PRINTF("Encryption Map:  %016llX\r\n",
 			InstancePtr->Tx.EncryptionMap);
 	Version = XHdcp1x_GetDriverVersion();
-	XHDCP1X_DEBUG_PRINTF("Driver Version:  %d.%02d.%02d\r\n",
+	XDEBUG_PRINTF("Driver Version:  %d.%02d.%02d\r\n",
 			((Version >> 16) &0xFFFFu), ((Version >> 8) & 0xFFu),
 			(Version & 0xFFu));
 	Version = XHdcp1x_CipherGetVersion(InstancePtr);
-	XHDCP1X_DEBUG_PRINTF("Cipher Version:  %d.%02d.%02d\r\n",
+	XDEBUG_PRINTF("Cipher Version:  %d.%02d.%02d\r\n",
 			((Version >> 16) &0xFFFFu), ((Version >> 8) & 0xFFu),
 			(Version & 0xFFu));
 	LocalKsv = XHdcp1x_CipherGetLocalKsv(InstancePtr);
-	XHDCP1X_DEBUG_PRINTF("Local KSV:       %02lX", (LocalKsv >> 32));
-	XHDCP1X_DEBUG_PRINTF("%08lX\r\n", (LocalKsv & 0xFFFFFFFFu));
+	XDEBUG_PRINTF("Local KSV:       %02lX", (LocalKsv >> 32));
+	XDEBUG_PRINTF("%08lX\r\n", (LocalKsv & 0xFFFFFFFFu));
 
-	XHDCP1X_DEBUG_PRINTF("\r\n");
-	XHDCP1X_DEBUG_PRINTF("Tx Stats\r\n");
-	XHDCP1X_DEBUG_PRINTF("Auth Passed:     %d\r\n",
+	XDEBUG_PRINTF("\r\n");
+	XDEBUG_PRINTF("Tx Stats\r\n");
+	XDEBUG_PRINTF("Auth Passed:     %d\r\n",
 			InstancePtr->Tx.Stats.AuthPassed);
-	XHDCP1X_DEBUG_PRINTF("Auth Failed:     %d\r\n",
+	XDEBUG_PRINTF("Auth Failed:     %d\r\n",
 			InstancePtr->Tx.Stats.AuthFailed);
-	XHDCP1X_DEBUG_PRINTF("Reauth Requests: %d\r\n",
+	XDEBUG_PRINTF("Reauth Requests: %d\r\n",
 			InstancePtr->Tx.Stats.ReauthRequested);
-	XHDCP1X_DEBUG_PRINTF("Check Passed:    %d\r\n",
+	XDEBUG_PRINTF("Check Passed:    %d\r\n",
 			InstancePtr->Tx.Stats.LinkCheckPassed);
-	XHDCP1X_DEBUG_PRINTF("Check Failed:    %d\r\n",
+	XDEBUG_PRINTF("Check Failed:    %d\r\n",
 			InstancePtr->Tx.Stats.LinkCheckFailed);
-	XHDCP1X_DEBUG_PRINTF("Read Failures:   %d\r\n",
+	XDEBUG_PRINTF("Read Failures:   %d\r\n",
 			InstancePtr->Tx.Stats.ReadFailures);
 
-	XHDCP1X_DEBUG_PRINTF("\r\n");
-	XHDCP1X_DEBUG_PRINTF("Cipher Stats\r\n");
-	XHDCP1X_DEBUG_PRINTF("Int Count:       %d\r\n",
+	XDEBUG_PRINTF("\r\n");
+	XDEBUG_PRINTF("Cipher Stats\r\n");
+	XDEBUG_PRINTF("Int Count:       %d\r\n",
 			InstancePtr->Cipher.Stats.IntCount);
 
-	XHDCP1X_DEBUG_PRINTF("\r\n");
-	XHDCP1X_DEBUG_PRINTF("Port Stats\r\n");
-	XHDCP1X_DEBUG_PRINTF("Int Count:       %d\r\n",
+	XDEBUG_PRINTF("\r\n");
+	XDEBUG_PRINTF("Port Stats\r\n");
+	XDEBUG_PRINTF("Int Count:       %d\r\n",
 			InstancePtr->Port.Stats.IntCount);
 
 	return (XST_SUCCESS);

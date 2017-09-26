@@ -1526,11 +1526,11 @@ int XV_HdmiTxSs_HdcpInfo(XV_HdmiTxSs *InstancePtr, char *buff, int buff_size)
           strSize = scnprintf(buff+strSize, buff_size-strSize,
               "\r\nHDCP 1.4 TX Info\r\n");
 
-          XHdcp1x_SetDebugBufPrintf(buff,buff_size, &strSize);
+          XDebug_SetDebugBufPrintf(buff,buff_size, &strSize);
           XHdcp1x_Info(InstancePtr->Hdcp14Ptr);
-          XHdcp1x_SetDebugBufPrintf(NULL,0, NULL);
+          XDebug_SetDebugBufPrintf(NULL,0, NULL);
           // Route debug output to xil_printf
-          XHdcp1x_SetDebugPrintf((void *)printk);
+          XDebug_SetDebugPrintf((void *)printk);
         }
         else {
           strSize = scnprintf(buff+strSize, buff_size-strSize,
@@ -1549,7 +1549,11 @@ int XV_HdmiTxSs_HdcpInfo(XV_HdmiTxSs *InstancePtr, char *buff, int buff_size)
 
           strSize = scnprintf(buff+strSize, buff_size-strSize,
               "HDCP 2.2 TX Info\r\n");
+          XDebug_SetDebugBufPrintf(buff,buff_size, &strSize);
           XHdcp22Tx_Info(InstancePtr->Hdcp22Ptr);
+          XDebug_SetDebugBufPrintf(NULL,0, NULL);
+          // Route debug output to xil_printf
+          XDebug_SetDebugPrintf((void *)printk);
         }
         else {
           strSize = scnprintf(buff+strSize, buff_size-strSize,
