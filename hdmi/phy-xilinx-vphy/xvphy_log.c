@@ -133,17 +133,14 @@ void XVphy_LogWrite(XVphy *InstancePtr, XVphy_LogEvent Evt, u8 Data)
 ******************************************************************************/
 u16 XVphy_LogRead(XVphy *InstancePtr)
 {
+	u16 Log = 0;
 #ifdef XV_VPHY_LOG_ENABLE
-	u16 Log;
 
 	/* Verify argument. */
 	Xil_AssertNonvoid(InstancePtr != NULL);
 
 	/* Check if there is any data in the log */
-	if (InstancePtr->Log.TailIndex == InstancePtr->Log.HeadIndex) {
-		Log = 0;
-	}
-	else {
+	if (InstancePtr->Log.TailIndex != InstancePtr->Log.HeadIndex) {
 		Log = InstancePtr->Log.DataBuffer[InstancePtr->Log.TailIndex];
 
 		/* Increment tail pointer */
@@ -155,9 +152,8 @@ u16 XVphy_LogRead(XVphy *InstancePtr)
 			InstancePtr->Log.TailIndex++;
 		}
 	}
-
-	return Log;
 #endif
+	return Log;
 }
 
 /*****************************************************************************/
