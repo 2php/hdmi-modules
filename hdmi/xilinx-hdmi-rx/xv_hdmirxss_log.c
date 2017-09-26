@@ -164,7 +164,7 @@ u16 XV_HdmiRxSs_LogRead(XV_HdmiRxSs *InstancePtr)
 ******************************************************************************/
 int XV_HdmiRxSs_LogShow(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
 {
-	int strSize = -1;
+	int strSize = 0;
 #ifdef XV_HDMIRXSS_LOG_ENABLE
     u16 Log;
     u8 Evt;
@@ -303,5 +303,5 @@ int XV_HdmiRxSs_LogShow(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
 #else
     xil_printf("\r\n INFO:: HDMIRXSS Log Feature is Disabled \r\n");
 #endif
-    return strSize+1;
+    return strSize;
 }

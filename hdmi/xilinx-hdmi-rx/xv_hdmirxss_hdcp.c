@@ -1266,7 +1266,7 @@ int XV_HdmiRxSs_HdcpInfo(XV_HdmiRxSs *InstancePtr, char *buff, int buff_size)
     default:
       xil_printf("\r\nHDCP info unknown?\r\n");
   }
-  return (strSize>0 ? strSize+1 : strSize);
+  return strSize;
 }
 #endif
 

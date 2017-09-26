@@ -164,14 +164,14 @@ u16 XVphy_LogRead(XVphy *InstancePtr)
 * @param	buff Buffer to print to
 * @param	buff_size size off buff passed
 *
-* @return	number of bytes written to buff.
+* @return	number of characters written to buff.
 *
 * @note		None.
 *
 ******************************************************************************/
 int XVphy_LogShow(XVphy *InstancePtr, char *buff, int buff_size)
 {
-	int strSize = -1;
+	int strSize = 0;
 #ifdef XV_VPHY_LOG_ENABLE
 	u16 Log;
 	u8 Evt;
@@ -544,5 +544,5 @@ int XVphy_LogShow(XVphy *InstancePtr, char *buff, int buff_size)
 #else
     xil_printf("\r\nINFO:: VPHY Log Feature is Disabled \r\n");
 #endif
-    return strSize+1;
+    return strSize;
 }
