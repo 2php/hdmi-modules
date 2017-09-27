@@ -795,7 +795,9 @@ void XVphy_ClkDetFreqReset(XVphy *InstancePtr, u8 QuadId,
 		XVphy_DirectionType Dir);
 u32 XVphy_ClkDetGetRefClkFreqHz(XVphy *InstancePtr, XVphy_DirectionType Dir);
 u32 XVphy_DruGetRefClkFreqHz(XVphy *InstancePtr);
-void XVphy_HdmiDebugInfo(XVphy *InstancePtr, u8 QuadId, XVphy_ChannelId ChId);
+int XVphy_HdmiDebugInfo(XVphy *InstancePtr, u8 QuadId, XVphy_ChannelId ChId,
+		char *buff, int buff_size);
+
 void XVphy_DpDebugInfo(XVphy *InstancePtr, u8 QuadId, XVphy_ChannelId ChId);
 void XVphy_SetHdmiCallback(XVphy *InstancePtr,
 		XVphy_HdmiHandlerType HandlerType,
