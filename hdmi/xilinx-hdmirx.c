@@ -1982,8 +1982,7 @@ static int xhdmi_probe(struct platform_device *pdev)
 
 	/* Initialize top level and all included sub-cores */
 	Status = XV_HdmiRxSs_CfgInitialize(HdmiRxSsPtr, &xhdmi->config, (uintptr_t)xhdmi->iomem);
-	if (Status != XST_SUCCESS)
-	{
+	if (Status != XST_SUCCESS) {
 		dev_err(xhdmi->dev, "initialization failed with error %d\n", Status);
 		return -EINVAL;
 	}
