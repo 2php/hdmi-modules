@@ -899,7 +899,7 @@ static void xilinx_drm_hdmi_mode_set(struct drm_encoder *encoder,
 	}
 #ifdef DEBUG
 	XV_HdmiTx_DebugInfo(HdmiTxSsPtr->HdmiTxPtr);
-	XVphy_HdmiDebugInfo(VphyPtr, 0, XVPHY_CHANNEL_ID_CHA);
+	//XVphy_HdmiDebugInfo(VphyPtr, 0, XVPHY_CHANNEL_ID_CHA);
 #endif
 	xvphy_mutex_unlock(xhdmi->phy[0]);
 	hdmi_mutex_unlock(&xhdmi->hdmi_mutex);
