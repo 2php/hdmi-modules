@@ -61,7 +61,6 @@
 #include "phy-xilinx-vphy/xhdcp22_mmult.h"
 #include "phy-xilinx-vphy/xhdcp22_rng.h"
 #include "phy-xilinx-vphy/xhdcp22_common.h"
-
 #include "phy-xilinx-vphy/aes256.h"
 
 #define XVPHY_DRU_REF_CLK_HZ	156250000
@@ -299,39 +298,6 @@ static struct phy *xvphy_xlate(struct device *dev,
 	BUG_ON(!vphy_lane->phy);
 	return vphy_lane->phy;
 }
-
-#if 0
-static ssize_t vphy_log_show(struct device *sysfs_dev, struct device_attribute *attr,
-	char *buf)
-{
-	ssize_t count;
-	XVphy *VphyPtr;
-	struct xvphy_dev *vphydev = (struct xvphy_dev *)dev_get_drvdata(sysfs_dev);
-	VphyPtr = &vphydev->xvphy;
-	BUG_ON(!VphyPtr);
-	count = XVphy_LogShow(VphyPtr, buf, PAGE_SIZE);
-	return count; //sprintf(buf, "vphy_log_show()\n");
-}
-
-static ssize_t vphy_log_store(struct device *sysfs_dev, struct device_attribute *attr,
-	const char *buf, size_t count)
-{ return count; }
-
-DEVICE_ATTR(vphy_log, 0664, vphy_log_show, vphy_log_store);
-
-static struct attribute *attrs[] = {
-	&dev_attr_vphy_log.attr, NULL,
-};
-
-static struct attribute_group attr_group = {
-	//.name = "logs",
-	.attrs = attrs,
-};
-
-static const struct attribute_group *attr_groups[] = {
-	&attr_group, NULL,
-};
-#endif
 
 /* Local Global table for phy instance(s) configuration settings */
 XVphy_Config XVphy_ConfigTable[XPAR_XVPHY_NUM_INSTANCES];
